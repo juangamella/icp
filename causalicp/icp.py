@@ -55,7 +55,7 @@ from termcolor import colored
 #---------------------------------------------------------------------
 # "Public" API: icp function
 
-def fit(data, target, alpha=0.05, selection=None, max_predictors=None, debug=False, stop_early=False):
+def fit(data, target, alpha=0.05, selection=None, max_predictors=None, verbose=False):
     """Run Invariant Causal Prediction on data from different experimental
     settings.
 
@@ -84,10 +84,14 @@ def fit(data, target, alpha=0.05, selection=None, max_predictors=None, debug=Fal
     verbose: bool, default=False
         If ICP should run in verbose mode, i.e. displaying information
         about completion and the result of tests.
+    
+    Returns
+    -------
+    
 
     """
-    assert len(environments) > 1
-    data = Data(environments, target)
+    # Check inputs
+    data = Data(data, target)
     # Build set of candidates
     if isinstance(selection, list):
         base = reduce(lambda union, s: set.union(union, s), selection, set())
@@ -104,32 +108,30 @@ def fit(data, target, alpha=0.05, selection=None, max_predictors=None, debug=Fal
     rejected = [] # To store the sets that were rejected
     mses = [] # To store the MSE of the accepted sets
     S = base
+    print("Tested sets and their p-values") if verbose else None
     for s in candidates:
         s = set(s)
         # Find linear coefficients on pooled data
         (beta, error) = regress(s, data)
         assert((beta[list(base.difference(s))] == 0).all())
-        p_value = test_hypothesis(beta, data, debug=debug)
+        p_value = test_hypothesis(beta, data)
         reject = p_value < alpha
         if reject:
             rejected.append(s)
         else:
             accepted.append(s)
             S = S.intersection(s)
-            mses.append(error)
-        if debug:
+        if verbose:
             color = "red" if reject else "green"
-            beta_str = np.array_str(beta, precision=2)
             set_str = "rejected" if reject else "accepted"
-            msg = colored("%s %s" % (s, set_str), color) + " - (p=%0.2f) - S = %s %s MSE: %0.4f" % (p_value, S, beta_str, error)
+            msg = "  " + colored("%s %s" % (s, set_str), color) + " - (p=%0.4f)" % p_value
             print(msg)
-        if len(S) == 0 and stop_early:
-            break;
+    print("\nEstimated parental set: %s\n" % S) if verbose else None
     return Result(S, accepted, rejected, mses, None)
 
 # Support functions to icp
 
-def test_hypothesis(coefs, data, debug=False):
+def test_hypothesis(coefs, data):
     """Test hypothesis for a vector of coefficients coefs, using the t-test for the mean
     and f-test for the variances, and returning the p-value
 
@@ -153,7 +155,7 @@ def test_hypothesis(coefs, data, debug=False):
     # Return two times the smallest p-value
     return min(pvalue_mean, pvalue_var) * 2
 
-def regress(s, data, pooling=True, debug=False):
+def regress(s, data, pooling=True):
     """
     Perform the linear regression of data.target over the variables indexed by s
     """
@@ -165,9 +167,6 @@ def regress(s, data, pooling=True, debug=False):
     coefs[supp] = np.linalg.lstsq(X,Y, None)[0]
     error = 0 #mse(Y, data.pooled_data() @ coefs)
     return coefs, error
-
-def mse(true, pred):
-    return np.sum((true - pred)**2) / len(true)
 
 def t_test(X,Y):
     """Return the p-value of the two sample f-test for
