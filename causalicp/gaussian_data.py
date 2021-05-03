@@ -33,6 +33,7 @@
 
 import numpy as np
 import copy
+from scipy.stats import t
 
 # ---------------------------------------------------------------------
 # GaussianData class and its support functions
@@ -53,19 +54,20 @@ class GaussianData():
         self.N = self.n_obs.sum()
         # Compute the pooled mean and variance
         if method == 'scatter':
-            pooled_data = np.vstack(self._data)
-            self._pooled_covariance = np.cov(pooled_data, rowvar=False, ddof=0)
-            self._pooled_mean = np.mean(pooled_data, axis=0)
+            self._pooled_data = np.vstack(self._data)
+            self._pooled_covariance = np.cov(self._pooled_data, rowvar=False, ddof=0)
+            self._pooled_mean = np.mean(self._pooled_data, axis=0)
         # Or add intercept column to design matrix
         elif method == 'raw':
             self._pooled_data = np.hstack([np.vstack(self._data), np.ones((self.N, 1))])
+        # Compute the pooled correlation matrix
+        self._pooled_correlation = self._pooled_data.T @ self._pooled_data
 
     def regress_pooled(self, y, S):
         S = list(S)
         if self._method == 'scatter':
             return regress(y, S, self._pooled_mean, self._pooled_covariance)
         elif self._method == 'raw':
-
             coefs = np.zeros(self.p + 1)
             sup = S + [self.p]
             coefs[sup] = np.linalg.lstsq(self._pooled_data[:, sup],

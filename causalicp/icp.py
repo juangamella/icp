@@ -54,7 +54,7 @@ from scipy.stats import t
 # "Public" API: icp function
 
 
-def fit(data, target, alpha=0.05, selection=None, max_predictors=None, verbose=False):
+def fit(data, target, alpha=0.05, conf_ints=False, selection=None, max_predictors=None, verbose=False):
     """Run Invariant Causal Prediction on data from different experimental
     settings.
 
@@ -105,13 +105,18 @@ def fit(data, target, alpha=0.05, selection=None, max_predictors=None, verbose=F
     # Evaluate candidates
     accepted = []  # To store the accepted sets
     rejected = []  # To store the sets that were rejected
-    mses = []  # To store the MSE of the accepted sets
+    confidence_intervals = [] if conf_ints else None
     S = base
     print("Tested sets and their p-values") if verbose else None
     for s in candidates:
         s = set(s)
-        p_value = _test_hypothesis(target, s, data)
-        reject = p_value < alpha
+        # Test hypothesis
+        if conf_ints:
+            reject, conf_interval = _test_hypothesis(target, s, data, alpha, conf_ints)
+            confidence_intervals.append(conf_interval)
+        else:
+            reject = _test_hypothesis(target, s, data, alpha, conf_ints)
+        # Update accepted sets and intersection
         if reject:
             rejected.append(s)
         else:
@@ -120,15 +125,15 @@ def fit(data, target, alpha=0.05, selection=None, max_predictors=None, verbose=F
         if verbose:
             color = "red" if reject else "green"
             set_str = "rejected" if reject else "accepted"
-            msg = "  " + colored("%s %s" % (s, set_str), color) + " - (p=%0.4f)" % p_value
+            msg = "  " + colored("%s %s" % (s, set_str), color)
             print(msg)
     print("\nEstimated parental set: %s\n" % S) if verbose else None
-    return Result(S, accepted, rejected, mses, None)
+    return Result(S, accepted, rejected, confidence_intervals)
 
 # Support functions to icp
 
 
-def _test_hypothesis(y, s, data):
+def _test_hypothesis(y, s, data, alpha, conf_ints=False):
     # Compute pooled coefficients
     coefs, intercept = data.regress_pooled(y, s)
     residuals = data.residuals(y, coefs, intercept)
@@ -146,8 +151,17 @@ def _test_hypothesis(y, s, data):
     # Combine via bonferroni correction
     pvalue_mean = min(mean_pvalues) * data.e
     pvalue_var = min(var_pvalues) * data.e
-    # Return two times the smallest p-value
-    return min(pvalue_mean, pvalue_var) * 2
+    # Correct again via bonferroni correction
+    reject = min(pvalue_mean, pvalue_var) * 2 < alpha
+    # Optionally, compute confidence intervals. Done here to avoid
+    # re-computing residuals
+    if conf_ints and reject:
+        return reject, (np.ones(data.p) * np.inf, np.ones(data.p) * - np.inf)
+    elif conf_ints:
+        conf_ints = confidence_intervals(y, coefs, s, residuals, alpha, data)
+        return reject, conf_ints
+    else:
+        return reject
 
 
 def t_test(X, Y):
@@ -167,40 +181,40 @@ def f_test(X, Y):
     return 2 * min(p, 1 - p)
 
 
-def confidence_intervals(s, coefs, data, alpha):
-    """Compute the confidence intervals of the regression coefficients
-    (coefs) of a predictor set s, given the level alpha.
-
-    Under Gaussian errors, the confidence intervals are given by
-    coefs +/- delta, where
-
-    delta = quantile * variance of residuals @ diag(inv. corr. matrix)
-
-    and variance and corr. matrix of residuals are estimates
-    """
-    s = list(s)
-    supp = s + [data.p]  # Support is pred. set + intercept
-    coefs = coefs[supp]
+def confidence_intervals(y, coefs, S, residuals, alpha, data):
+    # Estimated residual standard deviation
+    sigma = np.std(residuals)
     # Quantile term
-    dof = data.n - len(s) - 1
-    quantile = t.ppf(1 - alpha / 2 / len(s), dof)
-    # Residual variance term
-    Xs = data.pooled_data()[:, supp]
-    residuals = data.pooled_targets() - Xs @ coefs
-    variance = np.var(residuals)
-    # Corr. matrix term
-    sigma = np.diag(np.linalg.inv(Xs.T @ Xs))
-    # Compute interval
-    delta = quantile * np.sqrt(variance) * sigma
-    return (coefs - delta, coefs + delta)
+    S = list(S)
+    dof = data.N - len(S) - 1
+    quantile = t.ppf(1 - alpha / 2 / len(S), dof)
+    # Correlation matrix term
+    corr_term = np.diag(np.linalg.inv(data._pooled_correlation[:, S][S, :]))
+    print(dof, quantile, sigma, corr_term)
+    delta = quantile * sigma * corr_term
+    lo = np.ones(data.p) * np.inf
+    hi = np.ones(data.p) * - np.inf
+    #    hi = np.zeros(data.p), np.zeros(data.p)
+    lo[S] = coefs[S] - delta
+    hi[S] = coefs[S] + delta
+    print(S, (lo, hi))
+    return (lo, hi)
 
 
 class Result():
     """Class to hold the estimate produced by ICP and any additional information"""
 
-    def __init__(self, estimate, accepted, rejected, mses, conf_intervals=None):
+    def __init__(self, estimate, accepted, rejected, conf_intervals=None):
         self.estimate = estimate  # The estimate produced by ICP ie. intersection of accepted sets
         self.accepted = accepted  # Accepted sets
         self.rejected = rejected  # Rejected sets
-        self.mses = np.array(mses)  # MSE of the accepted sets
-        self.conf_intervals = conf_intervals  # Confidence intervals
+        # Compute confidence intervals
+        if conf_intervals is not None:
+            mins = np.array([i[0] for i in conf_intervals])
+            maxs = np.array([i[1] for i in conf_intervals])
+            print(mins)
+            print()
+            print(maxs)
+            self.conf_intervals = mins.min(axis=0), maxs.max(axis=0)
+        else:
+            self.conf_intervals = None
