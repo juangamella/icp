@@ -59,6 +59,16 @@ class GaussianData():
         self.n_obs = np.array(n_obs)
         self.N = self.n_obs.sum()
 
+    def regress_pooled(self, y, S, method='scatter'):
+        if method == 'scatter':
+            return self.regress_weighted(y, S)
+        elif method == 'raw':
+            S = list(S)
+            pooled = np.hstack([np.vstack(self._data), np.ones((self.N, 1))])
+            coefs = np.zeros(self.p + 1)
+            coefs[S + [self.p]] = np.linalg.lstsq(pooled[:, S + [self.p]], pooled[:, y], None)[0]
+            return coefs[0:self.p], coefs[self.p]
+
     def regress_weighted(self, y, S, weights=None):
         # Compute pooled covariance and mean
         # If not specified, each environment is weighted according to
