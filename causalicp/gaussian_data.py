@@ -41,43 +41,36 @@ import copy
 class GaussianData():
     """Class to manipulate multi-environment Gaussian data"""
 
-    def __init__(self, data):
+    def __init__(self, data, method='scatter'):
+        if method not in ['scatter', 'raw']:
+            raise ValueError('method=%s not recognized' % method)
+        else:
+            self._method = method
         self._data = copy.deepcopy(data)
         self.p = self._data[0].shape[1]
         self.e = len(self._data)
-        # Compute sample covariances, correlation matrices and sample
-        # sizes from each environment
-        self.sample_covariances = np.array([np.cov(X, rowvar=False, ddof=0) for X in self._data])
-        self.sample_means = np.array([np.mean(X, axis=0) for X in self._data])
-        correlation_matrices = []
-        n_obs = []
-        for X in self._data:
-            n_obs.append(len(X))
-            aux = np.hstack([X, np.ones((len(X), 1))])
-            correlation_matrices.append(aux.T @ aux)
-        self.correlation_matrices = np.array(correlation_matrices)
-        self.n_obs = np.array(n_obs)
+        self.n_obs = np.array([len(X) for X in data])
         self.N = self.n_obs.sum()
-
-    def regress_pooled(self, y, S, method='scatter'):
+        # Compute the pooled mean and variance
         if method == 'scatter':
-            return self.regress_weighted(y, S)
+            pooled_data = np.vstack(self._data)
+            self._pooled_covariance = np.cov(pooled_data, rowvar=False, ddof=0)
+            self._pooled_mean = np.mean(pooled_data, axis=0)
+        # Or add intercept column to design matrix
         elif method == 'raw':
-            S = list(S)
-            pooled = np.hstack([np.vstack(self._data), np.ones((self.N, 1))])
-            coefs = np.zeros(self.p + 1)
-            coefs[S + [self.p]] = np.linalg.lstsq(pooled[:, S + [self.p]], pooled[:, y], None)[0]
-            return coefs[0:self.p], coefs[self.p]
+            self._pooled_data = np.hstack([np.vstack(self._data), np.ones((self.N, 1))])
 
-    def regress_weighted(self, y, S, weights=None):
-        # Compute pooled covariance and mean
-        # If not specified, each environment is weighted according to
-        # the normalized size of its sample
-        weights = self.n_obs / self.N if weights is None else weights
-        pooled_cov = np.sum(self.sample_covariances * np.reshape(weights, (self.e, 1, 1)), axis=0)
-        pooled_mean = np.sum(self.sample_means * np.reshape(weights, (self.e, 1)), axis=0)
-        # Compute regression
-        return regress(y, S, pooled_mean, pooled_cov)
+    def regress_pooled(self, y, S):
+        S = list(S)
+        if self._method == 'scatter':
+            return regress(y, S, self._pooled_mean, self._pooled_covariance)
+        elif self._method == 'raw':
+
+            coefs = np.zeros(self.p + 1)
+            sup = S + [self.p]
+            coefs[sup] = np.linalg.lstsq(self._pooled_data[:, sup],
+                                         self._pooled_data[:, y], None)[0]
+            return coefs[0:self.p], coefs[self.p]
 
     def residuals(self, y, coefs, intercept):
         # Return the residuals of regressing y using the coefficients
@@ -86,7 +79,6 @@ class GaussianData():
 
 
 def regress(y, S, mean, cov):
-    S = sorted(S)
     coefs = np.zeros_like(mean)
     # Compute the regression coefficients from the
     # weighted empirical covariance (scatter) matrix i.e. b =
@@ -95,3 +87,13 @@ def regress(y, S, mean, cov):
         coefs[S] = np.linalg.solve(cov[S, :][:, S], cov[y, S])
     intercept = mean[y] - coefs @ mean
     return coefs, intercept
+
+    # def regress_weighted(self, y, S, weights=None):
+    #     # Compute pooled covariance and mean
+    #     # If not specified, each environment is weighted according to
+    #     # the normalized size of its sample
+    #     weights = self.n_obs / self.N if weights is None else weights
+    #     pooled_cov = np.sum(self.sample_covariances * np.reshape(weights, (self.e, 1, 1)), axis=0)
+    #     pooled_mean = np.sum(self.sample_means * np.reshape(weights, (self.e, 1)), axis=0)
+    #     # Compute regression
+    #     return regress(y, S, pooled_mean, pooled_cov)

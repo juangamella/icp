@@ -130,7 +130,7 @@ def fit(data, target, alpha=0.05, selection=None, max_predictors=None, verbose=F
 
 def _test_hypothesis(y, s, data):
     # Compute pooled coefficients
-    coefs, intercept = data.regress_pooled(y, s, method='raw')
+    coefs, intercept = data.regress_pooled(y, s)
     residuals = data.residuals(y, coefs, intercept)
     # Build p-values for the hypothesis that error distribution
     # remains invariant in each environment
