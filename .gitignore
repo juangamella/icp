@@ -1,4 +1,5 @@
 *~
+causalicp/test/test_cases/*
 experiments/*
 *.ipynb_checkpoints/
 *logs/
