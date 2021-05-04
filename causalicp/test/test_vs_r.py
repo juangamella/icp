@@ -32,12 +32,58 @@
 """
 
 import unittest
+import numpy as np
+import pandas as pd
+import causalicp as icp
 
-# Tested functions
 
-class TemplateTests(unittest.TestCase):
-    def test_template(self):
-        True
+def process_accepted_sets(df):
+    one_hot = df.to_numpy()[:, 1:]
+    sets = []
+    for s in one_hot:
+        idx = tuple(np.where(s != 0)[0] + 1)
+        sets.append(idx)
+    return set(sets)
 
-#---------------------------------------------------------------------
+
+def process_confints(df):
+    if len(df) == 0:
+        return None
+    else:
+        intervals = df.to_numpy()[[1, 0], 1:]
+        return np.hstack([np.array([[np.nan, np.nan]]).T, intervals])
+
+# ---------------------------------------------------------------------
 #
+
+
+class TestsVsR(unittest.TestCase):
+
+    def test_vs_r(self):
+        path = 'causalicp/test/test_cases/'
+        target = 0
+        alpha = 0.001
+        case_no = 0
+        while True:
+            # Read data
+            try:
+                data_path = path + 'case_%d.npy' % case_no
+                data = np.load(data_path)
+                # Read accepted sets from R's implementation of ICP
+                accepted_sets_path = path + 'icp_result_%d_accepted.csv' % case_no
+                true_accepted_sets = process_accepted_sets(pd.read_csv(accepted_sets_path))
+                # Read confidence intervals from R's implementation of ICP
+                confints_path = path + 'icp_result_%d_confints.csv' % case_no
+                true_confints = process_confints(pd.read_csv(confints_path))
+            except FileNotFoundError:
+                print("No more cases remain")
+                break
+            # Test
+            print("TEST CASE %d" % case_no)
+            result = icp.fit(data, target, alpha, conf_ints=False, verbose=False)
+            accepted_sets = set(tuple(s) for s in result.accepted)
+            self.assertEqual(accepted_sets, true_accepted_sets)
+            # print(result.conf_intervals)
+            # print(true_confints)
+            #self.assertTrue(np.allclose(result.conf_intervals, true_confints, equal_nan=True))
+            case_no += 1

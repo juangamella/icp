@@ -37,6 +37,7 @@ TODO  BEFORE PUBLISHING:
 
 """
 
+import pandas as pd
 from .gaussian_data import GaussianData
 
 import numpy as np
@@ -45,9 +46,7 @@ import itertools
 from termcolor import colored
 
 # For t-test and f-test
-from scipy.stats import ttest_ind as ttest
-from scipy.stats import f
-from scipy.stats import t
+import scipy.stats
 
 
 # ---------------------------------------------------------------------
@@ -92,16 +91,15 @@ def fit(data, target, alpha=0.05, conf_ints=False, selection=None, max_predictor
     # Check inputs
     data = GaussianData(data)
     # Build set of candidates
-    if isinstance(selection, list):
-        base = reduce(lambda union, s: set.union(union, s), selection, set())
-        candidates = selection
+    if selection is not None:
+        base = set(list(selection))
     else:
-        max_predictors = data.p - 1 if max_predictors is None else max_predictors
         base = set(range(data.p))
-        base.remove(target)
-        candidates = []
-        for set_size in range(max_predictors + 1):
-            candidates += list(itertools.combinations(base, set_size))
+    base -= {target}
+    max_predictors = data.p - 1 if max_predictors is None else max_predictors
+    candidates = []
+    for set_size in range(max_predictors + 1):
+        candidates += list(itertools.combinations(base, set_size))
     # Evaluate candidates
     accepted = []  # To store the accepted sets
     rejected = []  # To store the sets that were rejected
@@ -130,12 +128,14 @@ def fit(data, target, alpha=0.05, conf_ints=False, selection=None, max_predictor
     print("\nEstimated parental set: %s\n" % S) if verbose else None
     return Result(S, accepted, rejected, confidence_intervals)
 
+
 # Support functions to icp
 
 
 def _test_hypothesis(y, s, data, alpha, conf_ints=False):
     # Compute pooled coefficients
     coefs, intercept = data.regress_pooled(y, s)
+    #print(s, coefs, intercept)
     residuals = data.residuals(y, coefs, intercept)
     # Build p-values for the hypothesis that error distribution
     # remains invariant in each environment
@@ -144,18 +144,17 @@ def _test_hypothesis(y, s, data, alpha, conf_ints=False):
     for i in range(data.e):
         residuals_i = residuals[i]
         residuals_others = np.hstack([residuals[j] for j in range(data.e) if j != i])
+        # if s == {4}:
+        #     pd.DataFrame(residuals_i).to_csv('residuals_%d_a.csv' % i)
+        #     pd.DataFrame(residuals_others).to_csv('residuals_%d_b.csv' % i)
         mean_pvalues[i] = t_test(residuals_i, residuals_others)
         var_pvalues[i] = f_test(residuals_i, residuals_others)
-        assert(mean_pvalues[i] <= 1)
-        assert(var_pvalues[i] <= 1)
     # Combine via bonferroni correction
-    pvalue_mean = min(mean_pvalues) * data.e
-    pvalue_var = min(var_pvalues) * data.e
-    # Correct again via bonferroni correction
-    reject = min(pvalue_mean, pvalue_var) * 2 < alpha
+    smallest_pvalue = min(min(mean_pvalues), min(var_pvalues))
+    reject = smallest_pvalue < alpha / 2 / (data.e - 1)  # The -1 term is from the R implementation
     # Optionally, compute confidence intervals. Done here to avoid
     # re-computing residuals
-    if conf_ints and reject:
+    if conf_ints and (reject or len(s) == 0):
         return reject, (np.ones(data.p) * np.inf, np.ones(data.p) * - np.inf)
     elif conf_ints:
         conf_ints = confidence_intervals(y, coefs, s, residuals, alpha, data)
@@ -167,17 +166,15 @@ def _test_hypothesis(y, s, data, alpha, conf_ints=False):
 def t_test(X, Y):
     """Return the p-value of the two sample f-test for
     the given sample"""
-    result = ttest(X, Y, equal_var=False)
+    result = scipy.stats.ttest_ind(X, Y, alternative='two-sided', equal_var=False)
     return result.pvalue
 
 
 def f_test(X, Y):
     """Return the p-value of the two sample t-test for
     the given sample"""
-    X = X[np.isfinite(X)]
-    Y = Y[np.isfinite(Y)]
     F = np.var(X, ddof=1) / np.var(Y, ddof=1)
-    p = f.cdf(F, len(X) - 1, len(Y) - 1)
+    p = scipy.stats.f.cdf(F, len(X) - 1, len(Y) - 1)
     return 2 * min(p, 1 - p)
 
 
@@ -187,7 +184,7 @@ def confidence_intervals(y, coefs, S, residuals, alpha, data):
     # Quantile term
     S = list(S)
     dof = data.N - len(S) - 1
-    quantile = t.ppf(1 - alpha / 2 / len(S), dof)
+    quantile = scipy.stats.t.ppf(1 - alpha / 2 / len(S), dof)
     # Correlation matrix term
     corr_term = np.diag(np.linalg.inv(data._pooled_correlation[:, S][S, :]))
     print(dof, quantile, sigma, corr_term)
@@ -206,8 +203,8 @@ class Result():
 
     def __init__(self, estimate, accepted, rejected, conf_intervals=None):
         self.estimate = estimate  # The estimate produced by ICP ie. intersection of accepted sets
-        self.accepted = accepted  # Accepted sets
-        self.rejected = rejected  # Rejected sets
+        self.accepted = sorted(accepted)  # Accepted sets
+        self.rejected = sorted(rejected)  # Rejected sets
         # Compute confidence intervals
         if conf_intervals is not None:
             mins = np.array([i[0] for i in conf_intervals])
