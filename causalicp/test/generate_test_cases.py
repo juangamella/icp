@@ -39,7 +39,6 @@ import pickle
 import time
 from datetime import datetime
 import argparse
-import os
 import numpy as np
 import sempler
 import sempler.generators
@@ -69,7 +68,7 @@ def gen_scms(G, p, k, w_min, w_max, m_min, m_max, v_min, v_max):
     return cases
 
 
-def generate_interventions(scm, target, no_ints, max_int_size, m_min, m_max, v_min, v_max, include_obs=False):
+def generate_interventions(scm, no_ints, max_int_size, m_min, m_max, v_min, v_max, include_obs=False):
     """Generate a set of interventions for a given scm, randomly sampling
     no_ints sets of targets of size int_size, and sampling the
     intervention means/variances uniformly from [m_min,m_max], [v_min, v_max].
@@ -78,7 +77,6 @@ def generate_interventions(scm, target, no_ints, max_int_size, m_min, m_max, v_m
     the reference or observational environment.
     """
     interventions = [None] if include_obs else []
-    possible_targets = [i for i in range(scm.p) if i != target]
     # For each intervention
     for _ in range(no_ints):
         int_size = np.random.randint(0, max_int_size)
@@ -86,7 +84,7 @@ def generate_interventions(scm, target, no_ints, max_int_size, m_min, m_max, v_m
             interventions.append(None)
         else:
             # sample targets
-            targets = np.random.choice(possible_targets, int_size, replace=False)
+            targets = np.random.choice(range(scm.p), int_size, replace=False)
             # sample parameters
             means = np.random.uniform(m_min, m_max, len(targets)) if m_min != m_max else [
                 m_min] * len(targets)
@@ -98,12 +96,13 @@ def generate_interventions(scm, target, no_ints, max_int_size, m_min, m_max, v_m
             interventions.append(intervention)
     return interventions
 
+
 def data_to_csv(data, path, debug):
     """Save the multienvironment data in a csv file ready to be used by the R script that runs ICP"""
     # Combine the data into a single matrix with an extra column indicating the environment
     flattened = []
-    for e,X in enumerate(data):
-        flagged = np.hstack([np.ones((len(X),1)) * e, X])
+    for e, X in enumerate(data):
+        flagged = np.hstack([np.ones((len(X), 1)) * e, X])
         flattened.append(flagged)
     flattened = np.vstack(flattened)
     # Save to .csv
@@ -112,13 +111,15 @@ def data_to_csv(data, path, debug):
     print('  saved test case data to "%s"' % filename) if debug else None
     df.to_csv(filename, header=False, index=False)
 
+
 def data_to_bin(data, path, debug):
     filename = path + '.npy'
     print('  saved test case data to "%s"' % filename) if debug else None
     np.save(path, data)
-    
+
 # --------------------------------------------------------------------
 # Parse input parameters
+
 
 # Definitions and default settings
 arguments = {
@@ -134,7 +135,6 @@ arguments = {
     'G': {'default': 10, 'type': int},
     'k': {'default': 2.7, 'type': float},
     'p': {'default': 5, 'type': int},
-    'target': {'default': 0, 'type': int},
     'w_min': {'default': 0.5, 'type': float},
     'w_max': {'default': 1, 'type': float},
     'v_min': {'default': 1, 'type': float},
@@ -198,16 +198,14 @@ SCMs = gen_scms(args.G,
 
 cases = []
 for scm in SCMs:
-    target = np.random.choice(range(scm.p))
     interventions = generate_interventions(scm,
-                                           args.target,
                                            args.no_ints,
                                            args.int_size,
                                            args.int_m_min,
                                            args.int_m_max,
                                            args.int_v_min,
                                            args.int_v_max)
-    cases.append((scm, target, interventions))
+    cases.append((scm, interventions))
 
 # --------------------------------------------------------------------
 # Generate data and save it
@@ -217,7 +215,7 @@ start = time.time()
 
 n_obs = args.n_obs if args.n_obs is not None else args.n
 
-for i,(scm, target, interventions) in enumerate(cases):
+for i, (scm, interventions) in enumerate(cases):
     start_case = time.time()
     print('\nGenerating data for test case %d' % i)
     print('  p=%d, Interventions=%s' % (scm.p, interventions)) if args.debug else None
@@ -231,14 +229,14 @@ for i,(scm, target, interventions) in enumerate(cases):
         elif args.int_type == 'do':
             X = scm.sample(n=args.n, do_interventions=intervention)
         else:
-            raise ValueError("Invalid intervention type: %s" % int_type)
+            raise ValueError("Invalid intervention type: %s" % args.int_type)
         XX.append(X)
     # Save test case
     path = 'causalicp/test/test_cases/case_%d' % i
     data_to_bin(XX, path, args.debug)
     data_to_csv(XX, path, args.debug)
     with open(path + '.pickle', 'wb') as f:
-        pickle.dump((scm, target, interventions, XX), f)
+        pickle.dump((scm, interventions, XX), f)
         print('  saved test case details to "%s"' % (path + '.pickle')) if args.debug else None
     print('Done (%0.2f seconds)' % (time.time() - start_case))
 
