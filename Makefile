@@ -30,19 +30,38 @@
 
 SUITE = all
 PROJECT = causalicp
+CASES_DIR = causalicp/test/test_cases
 
 # Run tests
 tests: test
 
-test: examples
+test: cases
 ifeq ($(SUITE),all)
 	python -m unittest discover $(PROJECT).test
 else
 	python -m unittest $(PROJECT).test.$(SUITE)
 endif
 
+NO_CASES = 10
+
+cases: $(CASES_DIR)
+
+$(CASES_DIR):
+	rm -rf $(CASES_DIR)
+	mkdir $(CASES_DIR)
+	PYTHONPATH=./ python causalicp/test/generate_test_cases.py --G $(NO_CASES)
+	Rscript causalicp/test/run_icp.R 10
+
+# Run the doctests
+doctests:
+	PYTHONPATH=./ python causalicp/icp.py
+	PYTHONPATH=./ python causalicp/gaussian_data.py
+
 # Run the example scripts in the README
 examples:
 	PYTHONPATH=./ python docs/template_example.py
+
+clean:
+	rm -rf $(CASES_DIR)
 
 .PHONY: test, tests, examples
