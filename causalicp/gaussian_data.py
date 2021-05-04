@@ -33,7 +33,6 @@
 
 import numpy as np
 import copy
-from scipy.stats import t
 
 # ---------------------------------------------------------------------
 # GaussianData class and its support functions
