@@ -42,7 +42,7 @@ else
 	python -m unittest $(PROJECT).test.$(SUITE)
 endif
 
-NO_CASES = 10
+NO_CASES = 500
 
 cases: $(CASES_DIR)
 
@@ -50,7 +50,7 @@ $(CASES_DIR):
 	rm -rf $(CASES_DIR)
 	mkdir $(CASES_DIR)
 	PYTHONPATH=./ python causalicp/test/generate_test_cases.py --G $(NO_CASES)
-	Rscript causalicp/test/run_icp.R 10
+	Rscript causalicp/test/run_icp.R $(NO_CASES)
 
 # Run the doctests
 doctests:
