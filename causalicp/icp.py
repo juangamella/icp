@@ -53,7 +53,7 @@ import scipy.stats
 # "Public" API: icp function
 
 
-def fit(data, target, alpha=0.05, conf_ints=False, selection=None, max_predictors=None, verbose=False):
+def fit(data, target, alpha=0.05, selection=None, max_predictors=None, verbose=False):
     """Run Invariant Causal Prediction on data from different experimental
     settings.
 
@@ -90,6 +90,7 @@ def fit(data, target, alpha=0.05, conf_ints=False, selection=None, max_predictor
     """
     # Check inputs
     data = GaussianData(data)
+
     # Build set of candidates
     if selection is not None:
         base = set(list(selection))
@@ -100,43 +101,57 @@ def fit(data, target, alpha=0.05, conf_ints=False, selection=None, max_predictor
     candidates = []
     for set_size in range(max_predictors + 1):
         candidates += list(itertools.combinations(base, set_size))
-    # Evaluate candidates
+
+    # Evaluate candidate sets
     accepted = []  # To store the accepted sets
     rejected = []  # To store the sets that were rejected
-    confidence_intervals = [] if conf_ints else None
-    S = base
-    print("Tested sets and their p-values") if verbose else None
-    for s in candidates:
-        s = set(s)
-        # Test hypothesis
-        if conf_ints:
-            reject, conf_interval = _test_hypothesis(target, s, data, alpha, conf_ints)
+    confidence_intervals = []
+    p_values = {}  # To store the p-values of the tested sets
+    estimate = base
+    print("Tested sets and their p-values:") if verbose else None
+    # Test each set
+    for S in candidates:
+        S = set(S)
+        # Test hypothesis of invariance
+        reject, conf_interval, p_value = _test_hypothesis(target, S, data, alpha)
+        # Store result appropriately and update estimate (if necessary)
+        p_values[tuple(S)] = p_value
+        if not reject:
             confidence_intervals.append(conf_interval)
-        else:
-            reject = _test_hypothesis(target, s, data, alpha, conf_ints)
-        # Update accepted sets and intersection
+            accepted.append(S)
+            estimate &= S
         if reject:
-            rejected.append(s)
-        else:
-            accepted.append(s)
-            S = S.intersection(s)
+            rejected.append(S)
+        # Optionally, print output
         if verbose:
-            color = "red" if reject else "green"
-            set_str = "rejected" if reject else "accepted"
-            msg = "  " + colored("%s %s" % (s, set_str), color)
+            color = 'red' if reject else 'green'
+            set_str = 'rejected' if reject else 'accepted'
+            msg = '  ' + colored('%s %s : %s' % (S, set_str, p_value), color)
             print(msg)
-    print("\nEstimated parental set: %s\n" % S) if verbose else None
-    return Result(S, accepted, rejected, confidence_intervals)
+    # If no sets are accepted, there is a model violation. Reflect
+    # this by setting the estimate to None
+    if len(accepted) == 0:
+        estimate = None
+    print("Estimated parental set: %s\n" % estimate) if verbose else None
+    # Create and return the result object
+    result = Result(target,
+                    data,
+                    estimate,
+                    accepted,
+                    rejected,
+                    confidence_intervals,
+                    p_values)
+    return result
 
 
 # Support functions to icp
 
 
-def _test_hypothesis(y, s, data, alpha, conf_ints=False):
-    # Compute pooled coefficients
-    coefs, intercept = data.regress_pooled(y, s)
-    #print(s, coefs, intercept)
+def _test_hypothesis(y, S, data, alpha):
+    # Compute pooled coefficients and residuals
+    coefs, intercept = data.regress_pooled(y, S)
     residuals = data.residuals(y, coefs, intercept)
+    # print(s, coefs, intercept)
     # Build p-values for the hypothesis that error distribution
     # remains invariant in each environment
     mean_pvalues = np.zeros(data.e)
@@ -149,18 +164,16 @@ def _test_hypothesis(y, s, data, alpha, conf_ints=False):
         #     pd.DataFrame(residuals_others).to_csv('residuals_%d_b.csv' % i)
         mean_pvalues[i] = t_test(residuals_i, residuals_others)
         var_pvalues[i] = f_test(residuals_i, residuals_others)
-    # Combine via bonferroni correction
+    # Combine p-values via bonferroni correction
     smallest_pvalue = min(min(mean_pvalues), min(var_pvalues))
-    reject = smallest_pvalue < alpha / 2 / (data.e - 1)  # The -1 term is from the R implementation
-    # Optionally, compute confidence intervals. Done here to avoid
-    # re-computing residuals
-    if conf_ints and (reject or len(s) == 0):
-        return reject, (np.ones(data.p) * np.inf, np.ones(data.p) * - np.inf)
-    elif conf_ints:
-        conf_ints = confidence_intervals(y, coefs, s, residuals, alpha, data)
-        return reject, conf_ints
+    p_value = min(1, smallest_pvalue * 2 * (data.e - 1))  # The -1 term is from the R implementation
+    reject = p_value < alpha
+    # If set is accepted, compute p-values
+    if reject:
+        return reject, None, p_value
     else:
-        return reject
+        conf_ints = confidence_intervals(y, coefs, S, residuals, alpha, data)
+        return reject, conf_ints, p_value
 
 
 def t_test(X, Y):
@@ -179,39 +192,66 @@ def f_test(X, Y):
 
 
 def confidence_intervals(y, coefs, S, residuals, alpha, data):
-    # Estimated residual standard deviation
+    lo = np.ones(data.p) * np.inf
+    hi = np.ones(data.p) * - np.inf
+    # No need to compute intervals for the empty set
+    if len(S) == 0:
+        return (lo, hi)
+    # Compute individual terms
+    # 1. Estimated residual standard deviation
     sigma = np.std(residuals)
-    # Quantile term
+    # 2. Quantile term
     S = list(S)
     dof = data.N - len(S) - 1
     quantile = scipy.stats.t.ppf(1 - alpha / 2 / len(S), dof)
-    # Correlation matrix term
+    # 3. Correlation matrix term
     corr_term = np.diag(np.linalg.inv(data._pooled_correlation[:, S][S, :]))
-    print(dof, quantile, sigma, corr_term)
+    #print(dof, quantile, sigma, corr_term)
+    # Putting it all together
     delta = quantile * sigma * corr_term
-    lo = np.ones(data.p) * np.inf
-    hi = np.ones(data.p) * - np.inf
-    #    hi = np.zeros(data.p), np.zeros(data.p)
     lo[S] = coefs[S] - delta
     hi[S] = coefs[S] + delta
-    print(S, (lo, hi))
+    #print(S, (lo, hi))
     return (lo, hi)
 
 
 class Result():
     """Class to hold the estimate produced by ICP and any additional information"""
 
-    def __init__(self, estimate, accepted, rejected, conf_intervals=None):
-        self.estimate = estimate  # The estimate produced by ICP ie. intersection of accepted sets
-        self.accepted = sorted(accepted)  # Accepted sets
-        self.rejected = sorted(rejected)  # Rejected sets
+    def __init__(self, target, data, estimate, accepted, rejected, conf_intervals, p_values_sets):
+        # Save details of setup
+        self.e = data.e
+        self.p = data.p
+        self.target = target
+
+        # Store estimate and accepted/rejected sets
+        self.estimate = estimate
+        self.accepted = sorted(accepted)
+        self.rejected = sorted(rejected)
+
         # Compute confidence intervals
-        if conf_intervals is not None:
-            mins = np.array([i[0] for i in conf_intervals])
-            maxs = np.array([i[1] for i in conf_intervals])
-            print(mins)
-            print()
-            print(maxs)
-            self.conf_intervals = mins.min(axis=0), maxs.max(axis=0)
+        # mins = np.array([i[0] for i in conf_intervals])
+        # maxs = np.array([i[1] for i in conf_intervals])
+        # print(mins)
+        # print()
+        # print(maxs)
+        # self.conf_intervals = mins.min(axis=0), maxs.max(axis=0)
+        self.conf_intervals = None
+
+        # Compute p-values for individual variables
+        if len(accepted) == 0:
+            # If all sets are rejected, set the p-value of all
+            # variables to 1
+            self.p_values = dict((j, 1) for j in range(self.p))
+            self.p_values[target] = np.nan
         else:
-            self.conf_intervals = None
+            # Otherwise, the p-value of each variable is the highest
+            # among the p-values of the sets not containing j
+            self.p_values = {}
+            for j in range(self.p):
+                if j == target:
+                    self.p_values[j] = np.nan
+                else:
+                    # p_values of sets not containing j
+                    not_j = [pval for S, pval in p_values_sets.items() if j not in S]
+                    self.p_values[j] = max(not_j)

@@ -36,6 +36,8 @@ import numpy as np
 import pandas as pd
 import causalicp as icp
 
+# Functions to process the output of R's ICP for comparison
+
 
 def process_accepted_sets(df):
     one_hot = df.to_numpy()[:, 1:]
@@ -53,6 +55,14 @@ def process_confints(df):
         intervals = df.to_numpy()[[1, 0], 1:]
         return np.hstack([np.array([[np.nan, np.nan]]).T, intervals])
 
+
+def process_pvalues(df):
+    array = np.hstack([np.nan, df.to_numpy()[:, 1:].flatten()])
+    p_values = {}
+    for j, pval in enumerate(array):
+        p_values[j] = pval
+    return p_values
+
 # ---------------------------------------------------------------------
 #
 
@@ -65,6 +75,7 @@ class TestsVsR(unittest.TestCase):
         alpha = 0.001
         case_no = 0
         while True:
+            # --------------------------------------------------------
             # Read data
             try:
                 data_path = path + 'case_%d.npy' % case_no
@@ -75,15 +86,33 @@ class TestsVsR(unittest.TestCase):
                 # Read confidence intervals from R's implementation of ICP
                 confints_path = path + 'icp_result_%d_confints.csv' % case_no
                 true_confints = process_confints(pd.read_csv(confints_path))
+                # Read p-values from R's implementation of ICP
+                pvalues_path = path + 'icp_result_%d_pvals.csv' % case_no
+                true_pvalues = process_pvalues(pd.read_csv(pvalues_path))
             except FileNotFoundError:
                 print("No more cases remain")
                 break
+            # --------------------------------------------------------
             # Test
             print("TEST CASE %d" % case_no)
-            result = icp.fit(data, target, alpha, conf_ints=False, verbose=False)
+            result = icp.fit(data, target, alpha, verbose=True)
+
+            # Test accepted sets
             accepted_sets = set(tuple(s) for s in result.accepted)
             self.assertEqual(accepted_sets, true_accepted_sets)
+
+            # Test p-values
+            all_close = np.all([np.isclose(p1, p2, equal_nan=True)
+                                for (p1, p2) in zip(true_pvalues.values(), result.p_values.values())])
+            if not all_close:
+                print(true_accepted_sets)
+                print(accepted_sets)
+                print(true_pvalues)
+                print(result.p_values)
+            self.assertTrue(all_close)
+
+            # Test confidence intervals
             # print(result.conf_intervals)
             # print(true_confints)
-            #self.assertTrue(np.allclose(result.conf_intervals, true_confints, equal_nan=True))
+            # self.assertTrue(np.allclose(result.conf_intervals, true_confints, equal_nan=True))
             case_no += 1
