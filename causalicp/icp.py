@@ -28,17 +28,12 @@
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 
-"""This module contains the finite sample implementation of Invariant
-Causal Prediction, with a two-sample t-test and f-test to check the
-invariance of the conditional distribution.
-
-TODO  BEFORE PUBLISHING:
-  - color output by termcolor is not portable to all OSs, so deactivate it
-
+"""This module contains the implementation of the Invariant Causal
+Prediction algorithm.
 """
 
 import pandas as pd
-from .gaussian_data import GaussianData
+from .gaussian_data import _GaussianData
 
 import numpy as np
 from functools import reduce
@@ -50,10 +45,9 @@ import scipy.stats
 
 
 # ---------------------------------------------------------------------
-# "Public" API: icp function
+# "Public" API: fit function
 
-
-def fit(data, target, alpha=0.05, selection=None, max_predictors=None, verbose=False):
+def fit(data, target, alpha=0.05, sets=None, verbose=False):
     """Run Invariant Causal Prediction on data from different experimental
     settings.
 
@@ -69,16 +63,9 @@ def fit(data, target, alpha=0.05, selection=None, max_predictors=None, verbose=F
         The response or target variable of interest.
     alpha : float, default=0.05
         The level of the test procedure. Defaults to `0.05`.
-    selection : iterable of ints, optional
-        A pre-selection of the predictors which ICP will consider,
-        given as an iterable containing the variable indices, e.g. a
-        list or set. If not specified, ICP will consider all
-        predictors.
-    max_predictors: int, optional
-        The maximum number of predictors ICP should consider, i.e. the
-        largest size of the sets which are considered. If not
-        specified, ICP will consider sets up to size `p-1`, i.e. the
-        total number of predictors.
+    sets : list of set or None, default=None
+        The sets for which ICP will test invariance. If `None` all
+        possible subsets of predictors will be considered.
     verbose: bool, default=False
         If ICP should run in verbose mode, i.e. displaying information
         about completion and the result of tests.
@@ -89,20 +76,25 @@ def fit(data, target, alpha=0.05, selection=None, max_predictors=None, verbose=F
         An object containing the result of running ICP, i.e. estimate,
         accepted sets, p-values, etc.
 
+    Raises
+    ------
+    ValueError :
+
     """
     # Check inputs
-    data = GaussianData(data)
+    data = _GaussianData(data, method='scatter')
 
-    # Build set of candidates
-    if selection is not None:
-        base = set(list(selection))
+    # Build set of candidate sets
+    if sets is not None:
+        candidates = selection
     else:
         base = set(range(data.p))
-    base -= {target}
-    max_predictors = data.p - 1 if max_predictors is None else max_predictors
-    candidates = []
-    for set_size in range(max_predictors + 1):
-        candidates += list(itertools.combinations(base, set_size))
+        base -= {target}
+        #max_predictors = data.p - 1 if max_predictors is None else max_predictors
+        max_predictors = data.p - 1
+        candidates = []
+        for set_size in range(max_predictors + 1):
+            candidates += list(itertools.combinations(base, set_size))
 
     # Evaluate candidate sets
     accepted = []  # To store the accepted sets
@@ -136,7 +128,7 @@ def fit(data, target, alpha=0.05, selection=None, max_predictors=None, verbose=F
     # this by setting the estimate to None
     if len(accepted) == 0:
         estimate = None
-    print("gEstimated parental set: %s\n" % estimate) if verbose else None
+    print("Estimated parental set: %s\n" % estimate) if verbose else None
     # Create and return the result object
     result = Result(target,
                     data,
@@ -149,8 +141,8 @@ def fit(data, target, alpha=0.05, selection=None, max_predictors=None, verbose=F
     return result
 
 
-# Support functions to icp
-
+# --------------------------------------------------------------------
+# Auxiliary (private) functions
 
 def _test_hypothesis(y, S, data, alpha):
     # Compute pooled coefficients and residuals
@@ -283,9 +275,9 @@ class Result():
             self.pvalues = {}
             for j in range(self.p):
                 if j == target:
-                    self.p_values[j] = np.nan
+                    self.pvalues[j] = np.nan
                 else:
-                    # p_values of sets not containing j
+                    # p-values of sets not containing j
                     not_j = [pval for S, pval in set_pvalues.items() if j not in S]
                     self.pvalues[j] = max(not_j)
 

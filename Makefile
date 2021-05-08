@@ -42,7 +42,7 @@ else
 	python -m unittest $(PROJECT).test.$(SUITE)
 endif
 
-NO_CASES = 500
+NO_CASES = 1000
 
 cases: $(CASES_DIR)
 

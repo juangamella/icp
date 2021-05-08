@@ -28,17 +28,20 @@
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 
-"""
+"""This module contains the _GaussianData class, to store and handle
+the data passed to ICP. The regression of each set of predictors is
+done through this class.
+
 """
 
 import numpy as np
 import copy
 
 # ---------------------------------------------------------------------
-# GaussianData class and its support functions
+# _GaussianData class and its support functions
 
 
-class GaussianData():
+class _GaussianData():
     """Class to manipulate multi-environment Gaussian data"""
 
     def __init__(self, data, method='scatter'):

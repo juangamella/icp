@@ -95,7 +95,7 @@ class TestsVsR(unittest.TestCase):
             # --------------------------------------------------------
             # Test
             print("TEST CASE %d" % case_no)
-            result = icp.fit(data, target, alpha, verbose=True)
+            result = icp.fit(data, target, alpha, verbose=False)
 
             # Test accepted sets
             accepted_sets = set(tuple(s) for s in result.accepted)
@@ -103,12 +103,12 @@ class TestsVsR(unittest.TestCase):
 
             # Test p-values
             all_close = np.all([np.isclose(p1, p2, equal_nan=True)
-                                for (p1, p2) in zip(true_pvalues.values(), result.p_values.values())])
+                                for (p1, p2) in zip(true_pvalues.values(), result.pvalues.values())])
             if not all_close:
                 print(true_accepted_sets)
                 print(accepted_sets)
                 print(true_pvalues)
-                print(result.p_values)
+                print(result.pvalues)
             self.assertTrue(all_close)
 
             # Test confidence intervals
