@@ -27,7 +27,8 @@ while (case_no < CASES) {
     X <- data.matrix(raw[, preds])
 
     ## Run ICP
-    icp = ICP(X,Y,ExpInd,selection='all',alpha=0.001, showCompletion=FALSE)
+    alpha <- 0.001
+    icp = ICP(X,Y,ExpInd,selection='all',alpha=alpha, gof=alpha, showCompletion=FALSE)
     ## print(icp)
 
     ## One-hot encode accepted sets
@@ -39,12 +40,16 @@ while (case_no < CASES) {
     }
     ## print(one_hot)
 
-    ## Write accepted sets and confidence intervals
+    ## Write accepted sets
     filename = sprintf('%sicp_result_%d_accepted.csv', path, case_no)
     write.csv(one_hot, filename)
+    ## Write confidence intervals
     filename = sprintf('%sicp_result_%d_confints.csv', path, case_no)
     write.csv(icp$ConfInt, filename)
-
+    ## Write p-values
+    filename = sprintf('%sicp_result_%d_pvals.csv', path, case_no)
+    write.csv(icp$pvalues, filename)
+    
     case_no = case_no + 1
     
     }
