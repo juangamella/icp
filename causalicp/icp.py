@@ -60,7 +60,7 @@ def fit(data, target, alpha=0.05, sets=None, verbose=False):
         (data-points). The data also contains the response variable,
         which is specified with the `target` parameter.
     target : int
-        The response or target variable of interest.
+        The index of the response or target variable of interest.
     alpha : float, default=0.05
         The level of the test procedure. Defaults to `0.05`.
     sets : list of set or None, default=None
@@ -86,11 +86,11 @@ def fit(data, target, alpha=0.05, sets=None, verbose=False):
 
     # Build set of candidate sets
     if sets is not None:
-        candidates = selection
+        candidates = sets
     else:
         base = set(range(data.p))
         base -= {target}
-        #max_predictors = data.p - 1 if max_predictors is None else max_predictors
+        # max_predictors = data.p - 1 if max_predictors is None else max_predictors
         max_predictors = data.p - 1
         candidates = []
         for set_size in range(max_predictors + 1):
@@ -189,26 +189,32 @@ def _f_test(X, Y):
 
 
 def _confidence_intervals(y, coefs, S, residuals, alpha, data):
-    lo = np.ones(data.p) * np.inf
-    hi = np.ones(data.p) * - np.inf
+    # NOTE: This is done following the R implementation. The paper
+    # suggests a different approach using the t-distribution
+    S = list(S)
+    lo = np.zeros(data.p)
+    hi = np.zeros(data.p)
     # No need to compute intervals for the empty set
     if len(S) == 0:
         return (lo, hi)
     # Compute individual terms
-    # 1. Estimated residual standard deviation
-    sigma = np.std(residuals)
+    # 1. Estimate residual variance
+    residuals = np.hstack(residuals)
+    sigma = np.dot(residuals, residuals) / (data.N - len(S) - 1)
+    # print(sigma)
+    # 2. Estimate std. errors of the coefficients
+    correlation = data._pooled_correlation_w_intercept[:, S + [data.p]][S + [data.p], :]
+    corr_term = np.diag(np.linalg.inv(correlation))
+    std_errors = np.sqrt(sigma * corr_term)[:-1]
+    # print("std errors:", std_errors)
     # 2. Quantile term
-    S = list(S)
-    dof = data.N - len(S) - 1
-    quantile = scipy.stats.t.ppf(1 - alpha / 2 / len(S), dof)
-    # 3. Correlation matrix term
-    corr_term = np.diag(np.linalg.inv(data._pooled_correlation[:, S][S, :]))
-    #print(dof, quantile, sigma, corr_term)
-    # Putting it all together
-    delta = quantile * sigma * corr_term
+    quantile = scipy.stats.norm.ppf(1 - alpha / 4)
+    # print(quantile)
+    # All together
+    delta = quantile * std_errors
     lo[S] = coefs[S] - delta
     hi[S] = coefs[S] + delta
-    #print(S, (lo, hi))
+    # print(S, (lo, hi))
     return (lo, hi)
 
 
@@ -282,10 +288,10 @@ class Result():
                     self.pvalues[j] = max(not_j)
 
         # Compute confidence intervals
-        # mins = np.array([i[0] for i in conf_intervals])
-        # maxs = np.array([i[1] for i in conf_intervals])
-        # print(mins)
-        # print()
-        # print(maxs)
-        # self.conf_intervals = mins.min(axis=0), maxs.max(axis=0)
-        self.conf_intervals = None
+        if len(accepted) == 0:
+            self.conf_intervals = None
+        else:
+            mins = np.array([i[0] for i in conf_intervals])
+            maxs = np.array([i[1] for i in conf_intervals])
+            self.conf_intervals = np.array([mins.min(axis=0), maxs.max(axis=0)])
+            self.conf_intervals[:, target] = np.nan

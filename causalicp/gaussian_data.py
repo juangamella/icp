@@ -54,16 +54,18 @@ class _GaussianData():
         self.e = len(self._data)
         self.n_obs = np.array([len(X) for X in data])
         self.N = self.n_obs.sum()
+        # Compute the pooled correlation and covariance matrix
+        self._pooled_data = np.vstack(self._data)
+        self._pooled_covariance = np.cov(self._pooled_data, rowvar=False, ddof=0)
+        self._pooled_correlation = self._pooled_data.T @ self._pooled_data
+        self._pooled_data_w_intercept = np.hstack([np.vstack(self._data), np.ones((self.N, 1))])
+        self._pooled_correlation_w_intercept = self._pooled_data_w_intercept.T @ self._pooled_data_w_intercept
         # Compute the pooled mean and variance
         if method == 'scatter':
-            self._pooled_data = np.vstack(self._data)
-            self._pooled_covariance = np.cov(self._pooled_data, rowvar=False, ddof=0)
             self._pooled_mean = np.mean(self._pooled_data, axis=0)
         # Or add intercept column to design matrix
         elif method == 'raw':
-            self._pooled_data = np.hstack([np.vstack(self._data), np.ones((self.N, 1))])
-        # Compute the pooled correlation matrix
-        self._pooled_correlation = self._pooled_data.T @ self._pooled_data
+            self._pooled_data_w_intercept = np.hstack([np.vstack(self._data), np.ones((self.N, 1))])
 
     def regress_pooled(self, y, S):
         S = list(S)
@@ -72,8 +74,8 @@ class _GaussianData():
         elif self._method == 'raw':
             coefs = np.zeros(self.p + 1)
             sup = S + [self.p]
-            coefs[sup] = np.linalg.lstsq(self._pooled_data[:, sup],
-                                         self._pooled_data[:, y], None)[0]
+            coefs[sup] = np.linalg.lstsq(self._pooled_data_w_intercept[:, sup],
+                                         self._pooled_data_w_intercept[:, y], None)[0]
             return coefs[0:self.p], coefs[self.p]
 
     def residuals(self, y, coefs, intercept):

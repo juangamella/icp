@@ -112,7 +112,13 @@ class TestsVsR(unittest.TestCase):
             self.assertTrue(all_close)
 
             # Test confidence intervals
-            # print(result.conf_intervals)
-            # print(true_confints)
-            # self.assertTrue(np.allclose(result.conf_intervals, true_confints, equal_nan=True))
+            if true_confints is None:
+                self.assertIsNone(result.conf_intervals)
+            else:
+                all_close = np.allclose(result.conf_intervals, true_confints, equal_nan=True)
+                if not all_close:
+                    print(result.conf_intervals)
+                    print(true_confints)
+                self.assertTrue(all_close)
+
             case_no += 1
