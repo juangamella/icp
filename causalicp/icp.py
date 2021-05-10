@@ -145,10 +145,9 @@ def fit(data, target, alpha=0.05, sets=None, verbose=False):
 # Auxiliary (private) functions
 
 def _test_hypothesis(y, S, data, alpha):
-    # Compute pooled coefficients and residuals
+    # Compute pooled coefficients and environment-wise residuals
     coefs, intercept = data.regress_pooled(y, S)
     residuals = data.residuals(y, coefs, intercept)
-    # print(s, coefs, intercept)
     # Build p-values for the hypothesis that error distribution
     # remains invariant in each environment
     mean_pvalues = np.zeros(data.e)
@@ -156,16 +155,13 @@ def _test_hypothesis(y, S, data, alpha):
     for i in range(data.e):
         residuals_i = residuals[i]
         residuals_others = np.hstack([residuals[j] for j in range(data.e) if j != i])
-        # if s == {4}:
-        #     pd.DataFrame(residuals_i).to_csv('residuals_%d_a.csv' % i)
-        #     pd.DataFrame(residuals_others).to_csv('residuals_%d_b.csv' % i)
         mean_pvalues[i] = _t_test(residuals_i, residuals_others)
         var_pvalues[i] = _f_test(residuals_i, residuals_others)
     # Combine p-values via bonferroni correction
     smallest_pvalue = min(min(mean_pvalues), min(var_pvalues))
     p_value = min(1, smallest_pvalue * 2 * (data.e - 1))  # The -1 term is from the R implementation
     reject = p_value < alpha
-    # If set is accepted, compute p-values
+    # If set is accepted, compute confidence intervals
     if reject:
         return reject, None, p_value, (coefs, intercept)
     else:
@@ -190,31 +186,30 @@ def _f_test(X, Y):
 
 def _confidence_intervals(y, coefs, S, residuals, alpha, data):
     # NOTE: This is done following the R implementation. The paper
-    # suggests a different approach using the t-distribution
-    S = list(S)
+    # suggests a different approach using the t-distribution.
+    # NOTE: `residuals` could be recomputed from `y, data, coefs`; but
+    # why waste compute time
     lo = np.zeros(data.p)
     hi = np.zeros(data.p)
     # No need to compute intervals for the empty set
     if len(S) == 0:
         return (lo, hi)
     # Compute individual terms
-    # 1. Estimate residual variance
+    S = list(S)
+    # 1.1. Estimate residual variance
     residuals = np.hstack(residuals)
-    sigma = np.dot(residuals, residuals) / (data.N - len(S) - 1)
-    # print(sigma)
-    # 2. Estimate std. errors of the coefficients
-    correlation = data._pooled_correlation_w_intercept[:, S + [data.p]][S + [data.p], :]
+    sigma = residuals @ residuals / (data.N - len(S) - 1)
+    # 1.2. Estimate std. errors of the coefficients
+    sup = S + [data.p]  # Must include intercept in the computation
+    correlation = data._pooled_correlation[:, sup][sup, :]
     corr_term = np.diag(np.linalg.inv(correlation))
     std_errors = np.sqrt(sigma * corr_term)[:-1]
-    # print("std errors:", std_errors)
     # 2. Quantile term
     quantile = scipy.stats.norm.ppf(1 - alpha / 4)
-    # print(quantile)
     # All together
     delta = quantile * std_errors
     lo[S] = coefs[S] - delta
     hi[S] = coefs[S] + delta
-    # print(S, (lo, hi))
     return (lo, hi)
 
 
