@@ -56,7 +56,7 @@ class _GaussianData():
         self.N = self.n_obs.sum()
         # Compute the pooled correlation matrix (with columns of 1s for intercept)
         self._pooled_data = np.hstack([np.vstack(self._data), np.ones((self.N, 1))])
-        self._pooled_correlation = self._pooled_data.T @ self._pooled_data
+        self.pooled_correlation = self._pooled_data.T @ self._pooled_data
         # If using the scatter (covariance) matrix for regression,
         # compute the pooled mean and variance
         if method == 'scatter':
