@@ -244,7 +244,7 @@ def _confidence_intervals(y, coefs, S, residuals, alpha, data):
     sigma = residuals @ residuals / (data.N - len(S) - 1)
     # 1.2. Estimate std. errors of the coefficients
     sup = S + [data.p]  # Must include intercept in the computation
-    correlation = data._pooled_correlation[:, sup][sup, :]
+    correlation = data.pooled_correlation[:, sup][sup, :]
     corr_term = np.diag(np.linalg.inv(correlation))
     std_errors = np.sqrt(sigma * corr_term)[:-1]
     # 2. Quantile term
