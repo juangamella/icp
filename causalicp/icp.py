@@ -186,6 +186,8 @@ def fit(data, target, alpha=0.05, sets=None, verbose=False):
 # Auxiliary (private) functions
 
 def _test_hypothesis(y, S, data, alpha):
+    """Test the hypothesis for the invariance of the set S for the
+    target/response y"""
     # Compute pooled coefficients and environment-wise residuals
     coefs, intercept = data.regress_pooled(y, S)
     residuals = data.residuals(y, coefs, intercept)
@@ -211,21 +213,21 @@ def _test_hypothesis(y, S, data, alpha):
 
 
 def _t_test(X, Y):
-    """Return the p-value of the two sample f-test for
-    the given sample"""
+    """Return the p-value of the two sample t-test for the given samples."""
     result = scipy.stats.ttest_ind(X, Y, alternative='two-sided', equal_var=False)
     return result.pvalue
 
 
 def _f_test(X, Y):
-    """Return the p-value of the two sample t-test for
-    the given sample"""
+    """Return the p-value of the two-sided f-test for the given samples."""
     F = np.var(X, ddof=1) / np.var(Y, ddof=1)
     p = scipy.stats.f.cdf(F, len(X) - 1, len(Y) - 1)
     return 2 * min(p, 1 - p)
 
 
 def _confidence_intervals(y, coefs, S, residuals, alpha, data):
+    """Compute the confidence intervals for the coefficients estimated for
+    a set S for the target/response y"""
     # NOTE: This is done following the R implementation. The paper
     # suggests a different approach using the t-distribution.
     # NOTE: `residuals` could be recomputed from `y, data, coefs`; but
@@ -262,8 +264,6 @@ class Result():
     ----------
     p : int
         The total number of variables in the data (including the response/target).
-    e : int
-        The number of environments/experimental settings.
     target : int
         The index of the target/response.
     estimate : set or None
@@ -295,9 +295,6 @@ class Result():
 
     >>> import causalicp as icp
     >>> result = icp.fit(data, 3)
-
-    >>> result.e
-    3
 
     >>> result.p
     4
@@ -333,7 +330,6 @@ class Result():
 
     def __init__(self, target, data, estimate, accepted, rejected, conf_intervals, set_pvalues, set_coefs):
         # Save details of setup
-        self.e = data.e
         self.p = data.p
         self.target = target
 
