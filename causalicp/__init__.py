@@ -1,2 +1,2 @@
 from .icp import *
-from .gaussian_data import _GaussianData
+from .data import _Data

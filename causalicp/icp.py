@@ -29,23 +29,20 @@
 # POSSIBILITY OF SUCH DAMAGE.
 
 """This module contains the implementation of the Invariant Causal
-Prediction algorithm.
+Prediction algorithm (see icp.fit).
 """
-
-from causalicp.gaussian_data import _GaussianData
 
 import numpy as np
 import itertools
 from termcolor import colored
-
-# For t-test and f-test
-import scipy.stats
+from causalicp.data import _Data
+import scipy.stats  # For t-test and f-test
 
 
 # ---------------------------------------------------------------------
 # "Public" API: fit function
 
-def fit(data, target, alpha=0.05, sets=None, verbose=False):
+def fit(data, target, alpha=0.05, sets=None, precompute=True, verbose=False, color=False):
     """Run Invariant Causal Prediction on data from different experimental
     settings.
 
@@ -60,15 +57,35 @@ def fit(data, target, alpha=0.05, sets=None, verbose=False):
     target : int
         The index of the response or target variable of interest.
     alpha : float, default=0.05
-        The level of the test procedure. Defaults to `0.05`.
+        The level of the test procedure, taken from `[0,1]`. Defaults
+        to `0.05`.
     sets : iterable of set or None, default=None
         The sets for which ICP will test invariance. If `None` all
         possible subsets of predictors will be considered.
-    verbose: {False, True, 'color'}, default=False
+    precompute : bool, default=True
+        Wether to precompute the sample covariance matrix to speed up
+        linear regression during the testing of each predictor
+        set. For large sample sizes this drastically reduces the
+        overall execution time, but it may result in numerical
+        instabilities for highly correlated data. If set to `False`,
+        for each set of predictors the regression is done using an
+        iterative least-squares solver on the raw data.
+    verbose: bool, default=False
         If ICP should run in verbose mode, i.e. displaying information
-        about completion and the result of tests. If 'color', output
-        is additionally is color encoded (not recommended if your
-        terminal does not support color output).
+        about completion and the result of tests.
+    color : bool, default=True
+        If the output produced when `verbose=True` should be color
+        encoded (not recommended if your terminal does not support
+        ANSII color formatting).
+
+    Raises
+    ------
+    ValueError :
+        If the value of some of the parameters is not appropriate,
+        e.g. `alpha` is negative or `data` contains samples with
+        different number of variables.
+    TypeError :
+        If the type of some of the parameters is wrong, e.g. 
 
     Returns
     -------
@@ -87,19 +104,19 @@ def fit(data, target, alpha=0.05, sets=None, verbose=False):
     >>> data += [scm.sample(n=130, shift_interventions = {1: (3.1, 5.4)})]
     >>> data += [scm.sample(n=98, do_interventions = {2: (-1, 3)})]
 
-    Run ICP for the response variable `0`, at a significance level of `0.05` (the default).
+    Run ICP for the response variable `0`, at a significance level of `0.01` (the default).
 
     >>> import causalicp as icp
-    >>> result = icp.fit(data, 3, verbose=True)
+    >>> result = icp.fit(data, 3, alpha=0.05, precompute=True, verbose=True, color=False)
     Tested sets and their p-values:
-       set() rejected : 2.355990957880749e-10
-       {0} rejected : 7.698846116207467e-16
-       {1} rejected : 4.573866047163566e-09
-       {2} rejected : 8.374476052441259e-08
-       {0, 1} accepted : 0.7330408066181638
-       {0, 2} rejected : 2.062882130448634e-15
-       {1, 2} accepted : 0.8433000000649277
-       {0, 1, 2} accepted : 1
+      set() rejected : 2.355990957880749e-10
+      {0} rejected : 7.698846116207467e-16
+      {1} rejected : 4.573866047163566e-09
+      {2} rejected : 8.374476052441259e-08
+      {0, 1} accepted : 0.7330408066181638
+      {0, 2} rejected : 2.062882130448634e-15
+      {1, 2} accepted : 0.8433000000649277
+      {0, 1, 2} accepted : 1
     Estimated parental set: {1}
 
     Obtain the estimate, accepted sets, etc
@@ -121,7 +138,16 @@ def fit(data, target, alpha=0.05, sets=None, verbose=False):
            [2.11059461, 0.7865869 , 3.87380337,        nan]])
 
     """
-    data = _GaussianData(data, method='scatter')
+    # Check inputs
+    #   input: alpha
+    if alpha < 0 or alpha > 1:
+        raise ValueError("alpha must be in [0,1].")
+    #   input: data
+    data = _Data(data, method='scatter' if precompute else 'raw')
+    #   input: target
+    if target < 0 or target >= data.p or int(target) != target:
+        raise ValueError("target must be an integer in [0, p-1].")
+
     # Build set of candidate sets
     if sets is not None:
         candidates = sets
@@ -159,11 +185,11 @@ def fit(data, target, alpha=0.05, sets=None, verbose=False):
         # Optionally, print output
         if verbose:
             set_str = 'rejected' if reject else 'accepted'
-            if verbose == 'color':
+            if color:
                 color = 'red' if reject else 'green'
-                msg = '  ' + colored('%s %s : %s' % (S, set_str, p_value), color)
+                msg = colored('  %s %s : %s' % (S, set_str, p_value), color)
             else:
-                msg = '   %s %s : %s' % (S, set_str, p_value)
+                msg = '  %s %s : %s' % (S, set_str, p_value)
             print(msg)
     # If no sets are accepted, there is a model violation. Reflect
     # this by setting the estimate to None
@@ -203,7 +229,7 @@ def _test_hypothesis(y, S, data, alpha):
     # Combine p-values via bonferroni correction
     smallest_pvalue = min(min(mean_pvalues), min(var_pvalues))
     p_value = min(1, smallest_pvalue * 2 * (data.e - 1))  # The -1 term is from the R implementation
-    reject = p_value < alpha
+    reject = p_value <= alpha
     # If set is accepted, compute confidence intervals
     if reject:
         return reject, None, p_value, (coefs, intercept)
@@ -262,6 +288,7 @@ class Result():
 
     Attributes
     ----------
+
     p : int
         The total number of variables in the data (including the response/target).
     target : int
@@ -283,12 +310,6 @@ class Result():
         correspond to the lower and upper limit of the interval,
         respectively. The column corresponding to the target/response
         is set to `nan`.
-    set_pvalues : dict
-        A dictionary containing the p-value for the invariance test
-        for each of the tested sets.
-    set_coefficients : dict
-        A dictionary containing the coefficients + intercept estimated
-        for each of the tested sets.
 
     Example
     -------
@@ -318,14 +339,6 @@ class Result():
     array([[0.        , 0.        , 0.        ,        nan],
            [2.37257655, 1.95012059, 5.88760917,        nan]])
 
-    Get the p-value for invariance of the set {0,2}:
-    >>> result.set_pvalues[(0,2)]
-    0.015594782960195
-
-    Get the estimated coefficients and intercept for the set `{0,1,2}`:
-    >>> result.set_coefficients[(0,1,2)]
-    (array([1.7850804 , 0.68359795, 0.82072487, 0.        ]), 0.4147561743079411)
-
     When all sets are rejected (e.g. there is a model violation), the estimate and confidence intervals are set to None:
     >>> result = icp.fit(data_bad_model, 3)
     >>> result.estimate
@@ -347,8 +360,6 @@ class Result():
         self.estimate = estimate if len(accepted) > 0 else None
         self.accepted_sets = sorted(accepted)
         self.rejected_sets = sorted(rejected)
-        self.set_coefficients = set_coefs
-        self.set_pvalues = set_pvalues
 
         # Compute p-values for individual variables
         if len(accepted) == 0:

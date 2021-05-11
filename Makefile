@@ -55,7 +55,7 @@ $(CASES_DIR):
 # Run the doctests
 doctests:
 	PYTHONPATH=./ python causalicp/icp.py
-	PYTHONPATH=./ python causalicp/gaussian_data.py
+	PYTHONPATH=./ python causalicp/data.py
 
 # Run the example scripts in the README
 examples:
