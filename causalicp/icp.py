@@ -276,7 +276,7 @@ class Result():
     pvalues : dict of (int, float)
         A dictionary containing the p-value for the causal effect of
         each individual predictor.
-    conf_intervals : numpy.ndarray
+    conf_intervals : numpy.ndarray or None
         A `2 x p` array of floats representing the confidence interval
         for the causal effect of each variable. Each column
         corresponds to a variable, and the first and second row
@@ -326,6 +326,16 @@ class Result():
     >>> result.set_coefficients[(0,1,2)]
     (array([1.7850804 , 0.68359795, 0.82072487, 0.        ]), 0.4147561743079411)
 
+    When all sets are rejected (e.g. there is a model violation), the estimate and confidence intervals are set to None:
+    >>> result = icp.fit(data_bad_model, 3)
+    >>> result.estimate
+    >>> result.conf_intervals
+
+    And the individual p-value for the causal effect of each variable is set to 1:
+    >>> result.pvalues
+    {0: 1, 1: 1, 2: 1, 3: nan}
+
+
     """
 
     def __init__(self, target, data, estimate, accepted, rejected, conf_intervals, set_pvalues, set_coefs):
@@ -334,7 +344,7 @@ class Result():
         self.target = target
 
         # Store estimate, sets, set pvalues and coefficients
-        self.estimate = estimate
+        self.estimate = estimate if len(accepted) > 0 else None
         self.accepted_sets = sorted(accepted)
         self.rejected_sets = sorted(rejected)
         self.set_coefficients = set_coefs
@@ -401,4 +411,19 @@ if __name__ == '__main__':
                       [1.65037937, 0.85144602, 0.59248564, 4.32634469],
                       [4.12838539, 2.74329139, 1.52358883, 12.01222851],
                       [-0.99472687, 0.59361809, -0.81380456, 0.38239821]])]
-    doctest.testmod(extraglobs={'data': data}, verbose=True)
+    data_bad_model = [np.array([[0.46274901, -0.19975643, 0.76993618, 2.65949677],
+                                [0.3749258, -0.98625196, -0.1806925, 1.23991796],
+                                [-0.39597772, -1.79540294, -0.39718702, -1.31775062],
+                                [2.39332284, -3.22549743, 0.15317657, 1.60679175],
+                                [-0.56982823, 0.5084231, 0.41380479, 1.19607095]]),
+                      np.array([[1.45648798, 1.39977262, 1.05992289, 2.83848591],
+                                [-1.35654212, 6.69077259, -1.14624494, 1.1123806],
+                                [-0.48800913, 4.25112687, 0.48421499, 2.55352996],
+                                [2.74901219, 1.92465628, 1.49619723, 7.82673868],
+                                [5.35033726, 6.01847915, 1.69812062, 14.75126425]]),
+                      np.array([[4.52681786, 3.03254075, 1.69178362, -3.04895463],
+                                [1.58041688, -0.48726278, 0.49325566, -2.07307932],
+                                [1.97983673, -0.35611173, 1.28921189, -1.42832605],
+                                [-0.61288207, 1.91706645, 0.18163322, -1.51303223],
+                                [0.31303047, -0.53037518, 0.5094926, -2.87618241]])]
+    doctest.testmod(extraglobs={'data': data, 'data_bad_model': data_bad_model}, verbose=True)
