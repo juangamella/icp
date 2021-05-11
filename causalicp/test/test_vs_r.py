@@ -98,7 +98,7 @@ class TestsVsR(unittest.TestCase):
             result = icp.fit(data, target, alpha, verbose=False)
 
             # Test accepted sets
-            accepted_sets = set(tuple(s) for s in result.accepted)
+            accepted_sets = set(tuple(s) for s in result.accepted_sets)
             self.assertEqual(accepted_sets, true_accepted_sets)
 
             # Test p-values
