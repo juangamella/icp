@@ -363,7 +363,7 @@ def _test_hypothesis(y, S, data, alpha):
 
 def _t_test(X, Y):
     """Return the p-value of the two sample t-test for the given samples."""
-    result = scipy.stats.ttest_ind(X, Y, alternative='two-sided', equal_var=False)
+    result = scipy.stats.ttest_ind(X, Y, equal_var=False)
     return result.pvalue
 
 
