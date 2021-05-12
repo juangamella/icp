@@ -174,11 +174,11 @@ The code is divided in two modules:
 ## Tests
 
 Unit tests and doctests are included. Additionally, the output of the
-overall procedure has been checked against that of the `R` package by
-the original authors,
-[`InvariantCausalPrediction`](https://cran.r-project.org/web/packages/InvariantCausalPrediction/index.html)
-over tens of thousands of random graphs. Of course, this doesn't mean
-there are no bugs, but hopefully it means *they are less likely* :)
+overall procedure has been checked over tens of thousands of random graphs against that of the [R
+package](https://cran.r-project.org/web/packages/InvariantCausalPrediction/index.html)
+by the original authors. Of
+course, this doesn't mean there are no bugs, but hopefully it means
+*they are less likely* :)
 
 The tests can be run with `make tests`. This will also execute the
 doctests, generate `1000` random SCMs + interventions, and run the `R`
