@@ -12,5 +12,5 @@ setuptools.setup(
     description='Python implementation of the Invariant Causal Prediction (ICP) algorithm for causal discovery.',
     long_description=open('README.md').read(),
     long_description_content_type="text/markdown",
-    install_requires=['numpy>=1.15.0', 'scipy>=1.0.0', 'termcolor>=1.1.0']
+    install_requires=['numpy>=1.17.0', 'scipy>=1.3.0', 'termcolor>=1.1.0']
 )
