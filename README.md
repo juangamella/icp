@@ -18,7 +18,7 @@ The package is still at its infancy and its API is subject to change. However, t
 
 You can find the complete documentation at https://sempler.readthedocs.io/en/latest/. For completeness, we include an overview and a simple example below:
 
-## Running the algorithm
+### Running the algorithm
 
 To run the algorithm, the function `fit` is provided:
 
