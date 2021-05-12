@@ -42,7 +42,7 @@ import scipy.stats  # For t-test and f-test
 # ---------------------------------------------------------------------
 # "Public" API: fit function
 
-def fit(data, target, alpha=0.05, sets=None, precompute=True, verbose=False, color=False):
+def fit(data, target, alpha=0.05, sets=None, precompute=True, verbose=False, color=True):
     """Run Invariant Causal Prediction on data from different experimental
     settings.
 
@@ -103,31 +103,37 @@ def fit(data, target, alpha=0.05, sets=None, precompute=True, verbose=False, col
     Example
     -------
 
-    We generate interventional data from a linear-gaussian SCM using
-    `sempler <https://github.com/juangamella/sempler>`__ (not a
-    dependency of causalicp).
+    Using interventional from a linear-gaussian SCM (generated using
+    `sempler <https://github.com/juangamella/sempler>`__)
 
-    >>> import sempler, sempler.generators
-    >>> import numpy as np
-    >>> np.random.seed(12)
-    >>> W = sempler.generators.dag_avg_deg(4, 2.5, 0.5, 2)
-    >>> scm = sempler.LGANM(W, (-1,1), (1,2))
-    >>> data = [scm.sample(n=100)]
-    >>> data += [scm.sample(n=130, shift_interventions = {1: (3.1, 5.4)})]
-    >>> data += [scm.sample(n=98, do_interventions = {2: (-1, 3)})]
+    >>> data = [np.array([[0.46274901, -0.19975643, 0.76993618, 2.65949677],
+    ...                   [0.3749258, -0.98625196, -0.1806925, 1.23991796],
+    ...                   [-0.39597772, -1.79540294, -0.39718702, -1.31775062],
+    ...                   [2.39332284, -3.22549743, 0.15317657, 1.60679175],
+    ...                   [-0.56982823, 0.5084231, 0.41380479, 1.19607095]]),
+    ...         np.array([[1.45648798, 8.29977262, 1.05992289, 7.49191164],
+    ...                   [-1.35654212, 13.59077259, -1.14624494, 5.76580633],
+    ...                   [-0.48800913, 11.15112687, 0.48421499, 7.20695569],
+    ...                   [2.74901219, 8.82465628, 1.49619723, 12.48016441],
+    ...                   [5.35033726, 12.91847915, 1.69812062, 19.40468998]]),
+    ...         np.array([[-11.73619893, -6.87502658, -6.71775898, -28.2782561],
+    ...                   [-16.24118216, -11.26774231, -9.22041168, -42.09076079],
+    ...                   [-14.85266731, -11.02688079, -8.71264951, -40.37471919],
+    ...                   [-16.08519052, -11.73497156, -10.58198058, -42.55646184],
+    ...                   [-17.07817707, -11.29005529, -10.04063011, -45.01702447]])]
 
-    Running ICP for the response variable `0`, at a significance level of `0.01` (the default).
+    Running ICP for the response variable `3`, at a significance level of `0.1`.
 
     >>> import causalicp as icp
     >>> result = icp.fit(data, 3, alpha=0.05, precompute=True, verbose=True, color=False)
     Tested sets and their p-values:
-      set() rejected : 2.355990957880749e-10
-      {0} rejected : 7.698846116206799e-16
-      {1} rejected : 4.573866047164448e-09
-      {2} rejected : 8.374476052440766e-08
-      {0, 1} accepted : 0.7330408066183624
-      {0, 2} rejected : 2.0628821304485153e-15
-      {1, 2} accepted : 0.8433000000645153
+      set() rejected : 6.8529852769059795e-06
+      {0} rejected : 0.043550405609324994
+      {1} rejected : 6.10963528362226e-06
+      {2} rejected : 0.009731028782704005
+      {0, 1} accepted : 0.9107055098714101
+      {0, 2} rejected : 0.004160395025223608
+      {1, 2} accepted : 1
       {0, 1, 2} accepted : 1
     Estimated parental set: {1}
 
@@ -144,11 +150,11 @@ def fit(data, target, alpha=0.05, sets=None, precompute=True, verbose=False, col
     [set(), {0}, {1}, {2}, {0, 2}]
 
     >>> result.pvalues
-    {0: 0.8433000000645153, 1: 8.374476052440766e-08, 2: 0.7330408066183624, 3: nan}
+    {0: 1, 1: 0.043550405609324994, 2: 0.9107055098714101, 3: nan}
 
     >>> result.conf_intervals
-    array([[0.        , 0.57167295, 0.        ,        nan],
-           [2.11059461, 0.7865869 , 3.87380337,        nan]])
+    array([[0.        , 0.37617783, 0.        ,        nan],
+           [2.3531227 , 0.89116407, 4.25277329,        nan]])
 
     A `TypeError` is raised for parameters of the wrong type, and
     `ValueError` if they are not valid. For example, if `alpha` is not

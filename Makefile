@@ -59,7 +59,8 @@ doctests:
 
 # Run the example scripts in the README
 examples:
-	PYTHONPATH=./ python docs/template_example.py
+	PYTHONPATH=./ python docs/example.py
+	PYTHONPATH=./ python docs/example_w_sempler.py
 
 clean:
 	rm -rf $(CASES_DIR)
