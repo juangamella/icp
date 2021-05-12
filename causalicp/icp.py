@@ -122,7 +122,7 @@ def fit(data, target, alpha=0.05, sets=None, precompute=True, verbose=False, col
     ...                   [-16.08519052, -11.73497156, -10.58198058, -42.55646184],
     ...                   [-17.07817707, -11.29005529, -10.04063011, -45.01702447]])]
 
-    Running ICP for the response variable `3`, at a significance level of `0.1`.
+    Running ICP for the response variable `3`, at a significance level of `0.05`.
 
     >>> import causalicp as icp
     >>> result = icp.fit(data, 3, alpha=0.05, precompute=True, verbose=True, color=False)
@@ -155,6 +155,8 @@ def fit(data, target, alpha=0.05, sets=None, precompute=True, verbose=False, col
     >>> result.conf_intervals
     array([[0.        , 0.37617783, 0.        ,        nan],
            [2.3531227 , 0.89116407, 4.25277329,        nan]])
+
+    **Examples of exceptions**
 
     A `TypeError` is raised for parameters of the wrong type, and
     `ValueError` if they are not valid. For example, if `alpha` is not

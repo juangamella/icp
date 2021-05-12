@@ -1,22 +1,20 @@
-import causalicp as icp
-import sempler
-import sempler.generators
 import numpy as np
+import causalicp as icp
 
-np.random.seed(12)
-
-# Generate a random graph and construct a linear-Gaussian SCM
-W = sempler.generators.dag_avg_deg(4, 2.5, 0.5, 2)
-scm = sempler.LGANM(W, (-1, 1), (1, 2))
-
-# Generate a sample for setting 1: Observational setting
-data = [scm.sample(n=100)]
-
-# Setting 2: Shift-intervention on X1
-data += [scm.sample(n=130, shift_interventions={1: (3.1, 5.4)})]
-
-# Setting 3: Do-intervention on X2
-data += [scm.sample(n=98, do_interventions={2: (-1, 3)})]
-
+data = [np.array([[0.46274901, -0.19975643, 0.76993618, 2.65949677],
+                  [0.3749258, -0.98625196, -0.1806925, 1.23991796],
+                  [-0.39597772, -1.79540294, -0.39718702, -1.31775062],
+                  [2.39332284, -3.22549743, 0.15317657, 1.60679175],
+                  [-0.56982823, 0.5084231, 0.41380479, 1.19607095]]),
+        np.array([[1.45648798, 8.29977262, 1.05992289, 7.49191164],
+                  [-1.35654212, 13.59077259, -1.14624494, 5.76580633],
+                  [-0.48800913, 11.15112687, 0.48421499, 7.20695569],
+                  [2.74901219, 8.82465628, 1.49619723, 12.48016441],
+                  [5.35033726, 12.91847915, 1.69812062, 19.40468998]]),
+        np.array([[-11.73619893, -6.87502658, -6.71775898, -28.2782561],
+                  [-16.24118216, -11.26774231, -9.22041168, -42.09076079],
+                  [-14.85266731, -11.02688079, -8.71264951, -40.37471919],
+                  [-16.08519052, -11.73497156, -10.58198058, -42.55646184],
+                  [-17.07817707, -11.29005529, -10.04063011, -45.01702447]])]
 
 result = icp.fit(data, 3, alpha=0.05, precompute=True, verbose=True, color=False)
