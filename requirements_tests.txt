@@ -1,7 +1,7 @@
-numpy
-termcolor
-scipy
+numpy>=1.15.0
+scipy>=1.0.0
+termcolor>=1.1.0
 
 # Additional requirements for the tests
-sempler
-pandas
+sempler==0.2.0
+pandas>=0.20.1
