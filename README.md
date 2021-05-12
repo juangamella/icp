@@ -18,7 +18,7 @@ The package is still at its infancy and its API is subject to change. However, t
 
 You can find the complete documentation at https://sempler.readthedocs.io/en/latest/. For completeness, we include an overview and a simple example below:
 
-### Running the algorithm
+### Running the algorithm: `causalicp.fit`
 
 To run the algorithm, the function `fit` is provided:
 
@@ -26,7 +26,7 @@ To run the algorithm, the function `fit` is provided:
 causalicp.fit(data, target, alpha=0.05, sets=None, precompute=True, verbose=False, color=False):
 ```
 
-**Parameters**
+***Parameters***
 
 - **data** (numpy.ndarray or list of array-like): The data from all
   experimental settings. Each element of the list/array is a
@@ -58,14 +58,14 @@ causalicp.fit(data, target, alpha=0.05, sets=None, precompute=True, verbose=Fals
   terminal does not support ANSII color formatting), see
   [termcolor](https://pypi.org/project/termcolor/).
 
-**Raises**
+***Raises***
 
 - **ValueError**: If the value of some of the parameters is not
   appropriate, e.g. `alpha` is negative, `data` contains samples with
   different number of variables, or `sets` contains invalid sets.
 - **TypeError** : If the type of some of the parameters was not expected (see examples below).
 
-**Returns**
+***Returns***
 
 The result of the algorithm is returned in a `causalicp.Result` object, with the following attributes:
 
@@ -89,7 +89,7 @@ The result of the algorithm is returned in a `causalicp.Result` object, with the
     the interval, respectively. The column corresponding to the
     target/response is set to `nan`.
 
-**Example**
+### An example
 
 We generate interventional data from a linear-gaussian SCM using
 [`sempler`](https://github.com/juangamella/sempler) (not a
@@ -146,20 +146,9 @@ result.conf_intervals
 #        [2.11059461, 0.7865869 , 3.87380337,        nan]])
 ```
 
-## Code Structure
-
-All the modules can be found inside the `ges/` directory. These include:
-
-  - `ges.ges` which is the main module with the calls to start GES, and contains the implementation of the insert, delete and turn operators.
-  - `ges.utils` contains auxiliary functions and the logic to transform a PDAG into a CPDAG, used after each application of an operator.
-  - `ges.scores` contains the modules with the score classes:
-      - `ges.scores.decomposable_score` contains the base class for decomposable score classes (see that module for more details).
-      - `ges.scores.gauss_obs_l0_pen` contains an implementation of the cached Gaussian BIC score, as used in the original GES paper.
-   - `ges.test` contains the modules with the unit tests and tests comparing against the algorithm's implementation in the 'pcalg' package.   
-
 ## Tests
 
-All components come with unit tests to match, and some property-based tests. The output of the overall procedure has been checked against that of the [`pcalg`](https://www.rdocumentation.org/packages/pcalg/versions/2.7-1) implementation over tens of thousands of random graphs. Of course, this doesn't mean there are no bugs, but hopefully it means *they are less likely* :)
+Unit tests and doctests are included. Additionally, the output of the overall procedure has been checked against that of the R package by the original authors [`InvariantCausalPrediction`](https://www.rdocumentation.org/packages/pcalg/versions/2.7-1) over tens of thousands of random graphs. Of course, this doesn't mean there are no bugs, but hopefully it means *they are less likely* :)
 
 The tests can be run with `make test`. You can add `SUITE=<module_name>` to run a particular module only. There are, however, additional dependencies to run the tests. You can find these in [`requirements_tests.txt`](https://github.com/juangamella/ges/blob/master/requirements_tests.txt) and [`R_requirements_tests.txt`](https://github.com/juangamella/ges/blob/master/R_requirements_tests.txt).
 
