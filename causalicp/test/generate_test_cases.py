@@ -28,12 +28,10 @@
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 
-"""
-"""
+"""This module generates random test cases (SCM + interventions +
+data) to compare the output with the R implementation.
 
-# TODO
-# - Random seed management
-# - Decide how to divide results / run (probably each method-wise)
+"""
 
 import pickle
 import time
