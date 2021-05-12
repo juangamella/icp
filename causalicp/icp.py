@@ -63,8 +63,9 @@ def fit(data, target, alpha=0.05, sets=None, precompute=True, verbose=False, col
     sets : list of set or None, default=None
         The sets for which ICP will test invariance. An error is
         raised if a set is not a subset of `{0,...,p-1}` or it
-        contains the target. If `None` all possible subsets of
-        predictors will be considered.
+        contains the target, where `p` is the total number of
+        variables (including the target). If `None` all possible
+        subsets of predictors will be considered.
     precompute : bool, default=True
         Wether to precompute the sample covariance matrix to speed up
         linear regression during the testing of each predictor
@@ -79,7 +80,8 @@ def fit(data, target, alpha=0.05, sets=None, precompute=True, verbose=False, col
     color : bool, default=True
         If the output produced when `verbose=True` should be color
         encoded (not recommended if your terminal does not support
-        ANSII color formatting).
+        ANSII color formatting), see
+        [termcolor](https://pypi.org/project/termcolor/).
 
     Raises
     ------
@@ -90,7 +92,7 @@ def fit(data, target, alpha=0.05, sets=None, precompute=True, verbose=False, col
         sets.
     TypeError :
         If the type of some of the parameters was not expected (see
-        examples below)
+        examples below).
 
     Returns
     -------
@@ -100,6 +102,11 @@ def fit(data, target, alpha=0.05, sets=None, precompute=True, verbose=False, col
 
     Example
     -------
+
+    We generate interventional data from a linear-gaussian SCM using
+    [`sempler`](https://github.com/juangamella/sempler) (not a
+    dependency of causalicp).
+
     >>> import sempler, sempler.generators
     >>> import numpy as np
     >>> np.random.seed(12)
@@ -109,7 +116,7 @@ def fit(data, target, alpha=0.05, sets=None, precompute=True, verbose=False, col
     >>> data += [scm.sample(n=130, shift_interventions = {1: (3.1, 5.4)})]
     >>> data += [scm.sample(n=98, do_interventions = {2: (-1, 3)})]
 
-    Run ICP for the response variable `0`, at a significance level of `0.01` (the default).
+    Running ICP for the response variable `0`, at a significance level of `0.01` (the default).
 
     >>> import causalicp as icp
     >>> result = icp.fit(data, 3, alpha=0.05, precompute=True, verbose=True, color=False)
@@ -124,7 +131,7 @@ def fit(data, target, alpha=0.05, sets=None, precompute=True, verbose=False, col
       {0, 1, 2} accepted : 1
     Estimated parental set: {1}
 
-    Obtain the estimate, accepted sets, etc
+    Obtaining the estimate, accepted sets, etc
 
     >>> result.estimate
     {1}
@@ -399,17 +406,18 @@ class Result():
     p : int
         The total number of variables in the data (including the response/target).
     target : int
-        The index of the target/response.
+        The index of the response/target.
     estimate : set or None
-        The estimated parental set returned by ICP, or `None` if no
-        sets of predictors were accepted.
+        The estimated parental set returned by ICP, or `None` if all
+        sets of predictors were rejected.
     accepted_sets : list of set
         A list containing the accepted sets of predictors.
     rejected_sets : list of set
         A list containing the rejected sets of predictors.
     pvalues : dict of (int, float)
         A dictionary containing the p-value for the causal effect of
-        each individual predictor.
+        each individual predictor. The target/response is included in
+        the dictionary and has value `nan`.
     conf_intervals : numpy.ndarray or None
         A `2 x p` array of floats representing the confidence interval
         for the causal effect of each variable. Each column
@@ -446,15 +454,18 @@ class Result():
     array([[0.        , 0.        , 0.        ,        nan],
            [2.37257655, 1.95012059, 5.88760917,        nan]])
 
-    When all sets are rejected (e.g. there is a model violation), the estimate and confidence intervals are set to None:
+    When all sets are rejected (e.g. there is a model violation), the
+    estimate and confidence intervals are set to `None`:
+
     >>> result = icp.fit(data_bad_model, 3)
     >>> result.estimate
     >>> result.conf_intervals
 
-    And the individual p-value for the causal effect of each variable is set to 1:
+    And the individual p-value for the causal effect of each variable
+    is set to `1`:
+
     >>> result.pvalues
     {0: 1, 1: 1, 2: 1, 3: nan}
-
 
     """
 
