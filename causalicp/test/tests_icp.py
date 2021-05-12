@@ -1,4 +1,4 @@
-# Copyright 2020 Juan Luis Gamella Martin
+# Copyright 2021 Juan L. Gamella
 
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions
@@ -28,10 +28,45 @@
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 
-"""
-"""
+# ---------------------------------------------------------------------
+# Unit tests
 
+import unittest
 import numpy as np
+import copy
 
-#---------------------------------------------------------------------
-# 
+# Tested functions
+from causalicp.data import _Data
+
+
+class DataTests(unittest.TestCase):
+
+    def setUp(self):
+        self.p = 20
+        self.n_obs = [2, 3, 4]
+        self.N = np.sum(self.n_obs)
+        self.e = len(self.n_obs)
+        self.target = 3
+        XX = []
+        for i, ne in enumerate(self.n_obs):
+            X = np.tile(np.ones(self.p), (ne, 1))
+            X *= (i + 1)
+            X[:, self.target] *= -1
+            XX.append(X)
+        self.XX = XX
+
+    def test_basic(self):
+        data = _Data(self.XX)
+        self.assertEqual(data.N, self.N)
+        self.assertTrue((data.n_obs == self.n_obs).all())
+        self.assertEqual(data.p, self.p)
+        self.assertEqual(data.e, self.e)
+        self.assertEqual(data.e, len(self.XX))
+
+    def test_memory(self):
+        # Test that the data is copied into the class
+        XX = copy.deepcopy(self.XX)
+        data = _Data(XX)
+        XX[0][0, 0] = -100
+        data_pooled = data._pooled_data
+        self.assertFalse(data_pooled[0, 0] == XX[0][0, 0])

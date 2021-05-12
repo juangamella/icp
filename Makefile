@@ -29,20 +29,42 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 SUITE = all
-PROJECT = template
+PROJECT = causalicp
+CASES_DIR = causalicp/test/test_cases
 
 # Run tests
-tests: test
+tests: test doctests examples
 
-test: examples
+test: cases
 ifeq ($(SUITE),all)
 	python -m unittest discover $(PROJECT).test
 else
 	python -m unittest $(PROJECT).test.$(SUITE)
 endif
 
+# Generate random cases for comparison with the R implementation, but
+# don't overwrite them if they're already there!
+NO_CASES = 1000
+
+cases: $(CASES_DIR)
+
+$(CASES_DIR):
+	rm -rf $(CASES_DIR)
+	mkdir $(CASES_DIR)
+	PYTHONPATH=./ python causalicp/test/generate_test_cases.py --G $(NO_CASES)
+	Rscript causalicp/test/run_icp.R $(NO_CASES)
+
+# Run the doctests
+doctests:
+	PYTHONPATH=./ python causalicp/icp.py
+	PYTHONPATH=./ python causalicp/data.py
+
 # Run the example scripts in the README
 examples:
-	PYTHONPATH=./ python docs/template_example.py
+	PYTHONPATH=./ python docs/example.py
+	PYTHONPATH=./ python docs/example_w_sempler.py
+
+clean:
+	rm -rf $(CASES_DIR)
 
 .PHONY: test, tests, examples

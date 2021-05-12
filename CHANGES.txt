@@ -1,1 +1,1 @@
-v0.0.1, 2020-07-28 -- First template version.
+v0.1.0, 2021-05-12 -- First version including the full functionality.
