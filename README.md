@@ -62,9 +62,27 @@ causalicp.fit(data, target, alpha=0.05, sets=None, precompute=True, verbose=Fals
 
 **Returns**
 
-The result of the algorithm is returned in a `causalicp.Result` object, containing the result the estimate, accepted sets, p-values, etc.
+The result of the algorithm is returned in a `causalicp.Result` object, with the following attributes:
 
-Its attributes are:
+- **p** (int): The total number of variables in the data (including
+    the response/target).
+- **target** (int): The index of the
+    response/target.
+- **estimate** (set or None): The estimated parental set returned by
+    ICP, or `None` if all sets of predictors were rejected.
+- **accepted_sets** (list of set): A list containing the accepted sets
+  of predictors.
+- **rejected_sets** (list of set): 
+    A list containing the rejected sets of predictors.
+- **pvalues** (dict of (int, float)): A dictionary containing the
+    p-value for the causal effect of each individual predictor. The
+    target/response is included in the dictionary and has value `nan`.
+- **conf_intervals** (numpy.ndarray or None): A `2 x p` array of
+    floats representing the confidence interval for the causal effect
+    of each variable. Each column corresponds to a variable, and the
+    first and second row correspond to the lower and upper limit of
+    the interval, respectively. The column corresponding to the
+    target/response is set to `nan`.
 
 **Example**
 
