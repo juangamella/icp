@@ -33,15 +33,17 @@ PROJECT = causalicp
 CASES_DIR = causalicp/test/test_cases
 
 # Run tests
-tests: test
+tests: test doctests examples
 
-test: cases doctests
+test: cases
 ifeq ($(SUITE),all)
 	python -m unittest discover $(PROJECT).test
 else
 	python -m unittest $(PROJECT).test.$(SUITE)
 endif
 
+# Generate random cases for comparison with the R implementation, but
+# don't overwrite them if they're already there!
 NO_CASES = 1000
 
 cases: $(CASES_DIR)

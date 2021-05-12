@@ -180,7 +180,7 @@ the original authors,
 over tens of thousands of random graphs. Of course, this doesn't mean
 there are no bugs, but hopefully it means *they are less likely* :)
 
-The tests can be run with `make test`. This will also execute the
+The tests can be run with `make tests`. This will also execute the
 doctests, generate `1000` random SCMs + interventions, and run the `R`
 implementation on them for comparison. You can add
 `SUITE=<module_name>` to run a particular module only. There are,
