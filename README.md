@@ -2,6 +2,8 @@
 
 This is a Python implementation of the Invariant Causal Prediction (ICP) algorithm from the 2016 [paper](https://rss.onlinelibrary.wiley.com/doi/pdfdirect/10.1111/rssb.12167) *"Causal inference using invariant prediction: identification and confidence intervals"* by Jonas Peters, Peter Bühlmann and Nicolai Meinshausen.
 
+Currently, only the faster Method II of the paper (t-test + F-test on residuals) is implemented. For more details, see Section 3.1.2 of the paper.
+
 ## Installation
 
 You can clone this repo or install the python package via pip:

@@ -8,6 +8,8 @@ This is a Python implementation of the Invariant Causal Prediction
 confidence intervals"* by Jonas Peters, Peter Bühlmann and Nicolai
 Meinshausen.
 
+Currently, only the faster Method II of the paper (t-test + F-test on residuals) is implemented. For more details, see Section 3.1.2 of the paper.
+
 Navigating this documentation
 -----------------------------
 
