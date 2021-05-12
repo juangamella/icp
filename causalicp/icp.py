@@ -122,14 +122,15 @@ def fit(data, target, alpha=0.05, sets=None, precompute=True, verbose=False, col
     >>> result = icp.fit(data, 3, alpha=0.05, precompute=True, verbose=True, color=False)
     Tested sets and their p-values:
       set() rejected : 2.355990957880749e-10
-      {0} rejected : 7.698846116207467e-16
-      {1} rejected : 4.573866047163566e-09
-      {2} rejected : 8.374476052441259e-08
-      {0, 1} accepted : 0.7330408066181638
-      {0, 2} rejected : 2.062882130448634e-15
-      {1, 2} accepted : 0.8433000000649277
+      {0} rejected : 7.698846116206799e-16
+      {1} rejected : 4.573866047164448e-09
+      {2} rejected : 8.374476052440766e-08
+      {0, 1} accepted : 0.7330408066183624
+      {0, 2} rejected : 2.0628821304485153e-15
+      {1, 2} accepted : 0.8433000000645153
       {0, 1, 2} accepted : 1
     Estimated parental set: {1}
+
 
     Obtaining the estimate, accepted sets, etc
 
@@ -143,7 +144,7 @@ def fit(data, target, alpha=0.05, sets=None, precompute=True, verbose=False, col
     [set(), {0}, {1}, {2}, {0, 2}]
 
     >>> result.pvalues
-    {0: 0.8433000000649277, 1: 8.374476052441259e-08, 2: 0.7330408066181638, 3: nan}
+    {0: 0.8433000000645153, 1: 8.374476052440766e-08, 2: 0.7330408066183624, 3: nan}
 
     >>> result.conf_intervals
     array([[0.        , 0.57167295, 0.        ,        nan],
@@ -448,7 +449,7 @@ class Result():
     [set(), {0}, {0, 2}]
 
     >>> result.pvalues
-    {0: 1, 1: 0.18743059830475126, 2: 1, 3: nan}
+    {0: 1, 1: 0.187430598304751, 2: 1, 3: nan}
 
     >>> result.conf_intervals
     array([[0.        , 0.        , 0.        ,        nan],
