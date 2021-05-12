@@ -30,7 +30,7 @@ You can find the complete documentation at https://icp.readthedocs.io/en/latest/
 To run the algorithm, the function `fit` is provided:
 
 ```python
-causalicp.fit(data, target, alpha=0.05, sets=None, precompute=True, verbose=False, color=False):
+causalicp.fit(data, target, alpha=0.05, sets=None, precompute=True, verbose=False, color=True):
 ```
 
 **Parameters**
