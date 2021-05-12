@@ -88,40 +88,40 @@ Running ICP for the response variable `0`, at a significance level of `0.01` (th
 ```python
 import causalicp as icp
 result = icp.fit(data, 3, alpha=0.05, precompute=True, verbose=True, color=False)
+
+# Output:
+
+# Tested sets and their p-values:
+#   set() rejected : 2.355990957880749e-10
+#   {0} rejected : 7.698846116207467e-16
+#   {1} rejected : 4.573866047163566e-09
+#   {2} rejected : 8.374476052441259e-08
+#   {0, 1} accepted : 0.7330408066181638
+#   {0, 2} rejected : 2.062882130448634e-15
+#   {1, 2} accepted : 0.8433000000649277
+#   {0, 1, 2} accepted : 1
+# Estimated parental set: {1}
 ```
-```
-Tested sets and their p-values:
-  set() rejected : 2.355990957880749e-10
-  {0} rejected : 7.698846116207467e-16
-  {1} rejected : 4.573866047163566e-09
-  {2} rejected : 8.374476052441259e-08
-  {0, 1} accepted : 0.7330408066181638
-  {0, 2} rejected : 2.062882130448634e-15
-  {1, 2} accepted : 0.8433000000649277
-  {0, 1, 2} accepted : 1
-Estimated parental set: {1}
-```
 
-The estimate, accepted sets, etc are attributes of the `causalicp.Result` object:
+The estimate, accepted sets, etc. are attributes of the `causalicp.Result` object:
 
+```python
+result.estimate
+# {1}
 
->>> result.estimate
-{1}
+result.accepted_sets
+# [{0, 1}, {1, 2}, {0, 1, 2}]
 
-[{0, 1}, {1, 2}, {0, 1, 2}]
-
-[set(), {0}, {1}, {2}, {0, 2}]
+result.rejected_sets
+# [set(), {0}, {1}, {2}, {0, 2}]
 
 result.pvalues
-{0: 0.8433000000649277, 1: 8.374476052441259e-08, 2: 0.7330408066181638, 3: nan}
+# {0: 0.8433000000649277, 1: 8.374476052441259e-08, 2: 0.7330408066181638, 3: nan}
 
 result.conf_intervals
-array([[0.        , 0.57167295, 0.        ,        nan],
-       [2.11059461, 0.7865869 , 3.87380337,        nan]])
+# array([[0.        , 0.57167295, 0.        ,        nan],
+#        [2.11059461, 0.7865869 , 3.87380337,        nan]])
 ```
-**Returns**
-
-**Example**
 
 ## Code Structure
 
