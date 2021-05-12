@@ -48,12 +48,13 @@ def fit(data, target, alpha=0.05, sets=None, precompute=True, verbose=False, col
 
     Parameters
     ----------
-    data : list of array-like
+    data : numpy.ndarray or list of array-like
         The data from all experimental settings. Each element of the
-        list is an array with a sample from a different setting, where
-        columns correspond to variables and rows to observations
-        (data-points). The data also contains the response variable,
-        which is specified with the `target` parameter.
+        list/array is a 2-dimensional array with a sample from a
+        different setting, where columns correspond to variables and
+        rows to observations (data-points). The data also contains the
+        response variable, which is specified with the `target`
+        parameter.
     target : int
         The index of the response or target variable of interest.
     alpha : float, default=0.05
@@ -88,7 +89,8 @@ def fit(data, target, alpha=0.05, sets=None, precompute=True, verbose=False, col
         different number of variables, or `sets` contains invalid
         sets.
     TypeError :
-        If the type of some of the parameters was not expected.
+        If the type of some of the parameters was not expected (see
+        examples below)
 
     Returns
     -------
@@ -212,7 +214,6 @@ def fit(data, target, alpha=0.05, sets=None, precompute=True, verbose=False, col
     Traceback (most recent call last):
       ...
     ValueError: The samples from each setting have a different number of variables: [2 1].
-
 
     """
     # Check inputs: alpha

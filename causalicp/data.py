@@ -63,7 +63,7 @@ class _Data():
 
         Parameters
         ----------
-        data : list of array-like
+        data : numpy.ndarray or list of array-like
             The data from all experimental settings. Each element of
             the list is an array with a sample from a different
             setting, where columns correspond to variables and rows to
@@ -94,6 +94,12 @@ class _Data():
         >>> data = _Data(samples, method='raw')
         >>> data = _Data(samples, method='scatter')
 
+        Passing a numpy array
+
+        >>> import numpy as np
+        >>> samples = np.random.multivariate_normal([0,0,0], np.eye(3), size=(10,3))
+        >>> data = _Data(samples)
+
         Passing the wrong method:
 
         >>> _Data(samples, method='sctter')
@@ -101,14 +107,12 @@ class _Data():
           ...
         ValueError: method="sctter" not recognized.
 
-        Passing a numpy array instead of a list:
+        Passing a tuple instead of a list:
 
-        >>> import numpy as np
-        >>> samples = np.random.multivariate_normal([0,0,0], np.eye(3), size=(10,3))
-        >>> data = _Data(samples)
+        >>> _Data(tuple(samples))
         Traceback (most recent call last):
           ...
-        TypeError: data should be a list of array-like, not <class 'numpy.ndarray'>.
+        TypeError: data should be a numpy.ndarray or list of array-like, not <class 'tuple'>.
 
         Passing samples with different number of variables,
 
@@ -145,8 +149,9 @@ class _Data():
         # Check inputs: data
         self._data = []
         Ps = []
-        if not isinstance(data, list):
-            raise TypeError("data should be a list of array-like, not %s." % type(data))
+        if not (isinstance(data, list) or isinstance(data, np.ndarray)):
+            raise TypeError(
+                "data should be a numpy.ndarray or list of array-like, not %s." % type(data))
         for X in data:
             array = np.array(X, dtype=np.float)
             dims = array.ndim
