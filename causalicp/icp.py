@@ -81,7 +81,7 @@ def fit(data, target, alpha=0.05, sets=None, precompute=True, verbose=False, col
         If the output produced when `verbose=True` should be color
         encoded (not recommended if your terminal does not support
         ANSII color formatting), see
-        [termcolor](https://pypi.org/project/termcolor/).
+        `termcolor <https://pypi.org/project/termcolor/>`__.
 
     Raises
     ------
@@ -96,15 +96,15 @@ def fit(data, target, alpha=0.05, sets=None, precompute=True, verbose=False, col
 
     Returns
     -------
-    result : icp.Result
-        An object containing the result of running ICP, i.e. estimate,
-        accepted sets, p-values, etc.
+    result : causalicp.Result
+        A :class:`causalicp.Result` object containing the result of
+        running ICP, i.e. estimate, accepted sets, p-values, etc.
 
     Example
     -------
 
     We generate interventional data from a linear-gaussian SCM using
-    [`sempler`](https://github.com/juangamella/sempler) (not a
+    `sempler <https://github.com/juangamella/sempler>`__ (not a
     dependency of causalicp).
 
     >>> import sempler, sempler.generators
