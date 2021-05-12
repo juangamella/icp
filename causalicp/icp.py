@@ -59,9 +59,11 @@ def fit(data, target, alpha=0.05, sets=None, precompute=True, verbose=False, col
     alpha : float, default=0.05
         The level of the test procedure, taken from `[0,1]`. Defaults
         to `0.05`.
-    sets : iterable of set or None, default=None
-        The sets for which ICP will test invariance. If `None` all
-        possible subsets of predictors will be considered.
+    sets : list of set or None, default=None
+        The sets for which ICP will test invariance. An error is
+        raised if a set is not a subset of `{0,...,p-1}` or it
+        contains the target. If `None` all possible subsets of
+        predictors will be considered.
     precompute : bool, default=True
         Wether to precompute the sample covariance matrix to speed up
         linear regression during the testing of each predictor
@@ -82,10 +84,11 @@ def fit(data, target, alpha=0.05, sets=None, precompute=True, verbose=False, col
     ------
     ValueError :
         If the value of some of the parameters is not appropriate,
-        e.g. `alpha` is negative or `data` contains samples with
-        different number of variables.
+        e.g. `alpha` is negative, `data` contains samples with
+        different number of variables, or `sets` contains invalid
+        sets.
     TypeError :
-        If the type of some of the parameters is wrong, e.g. 
+        If the type of some of the parameters was not expected.
 
     Returns
     -------
@@ -137,29 +140,132 @@ def fit(data, target, alpha=0.05, sets=None, precompute=True, verbose=False, col
     array([[0.        , 0.57167295, 0.        ,        nan],
            [2.11059461, 0.7865869 , 3.87380337,        nan]])
 
+    A `TypeError` is raised for parameters of the wrong type, and
+    `ValueError` if they are not valid. For example, if `alpha` is not
+    a float between 0 and 1,
+
+    >>> icp.fit(data, 3, alpha = 1)
+    Traceback (most recent call last):
+      ...
+    TypeError: alpha must be a float, not <class 'int'>.
+
+    >>> icp.fit(data, 3, alpha = -0.1)
+    Traceback (most recent call last):
+      ...
+    ValueError: alpha must be in [0,1].
+
+    >>> icp.fit(data, 3, alpha = 1.1)
+    Traceback (most recent call last):
+      ...
+    ValueError: alpha must be in [0,1].
+
+    if the target is not an integer within range,
+
+    >>> icp.fit(data, 3.0)
+    Traceback (most recent call last):
+      ...
+    TypeError: target must be an int, not <class 'float'>.
+
+    >>> icp.fit(data, 5)
+    Traceback (most recent call last):
+      ...
+    ValueError: target must be an integer in [0, p-1].
+
+    if `sets` is of the wrong type or contains an invalid set,
+
+    >>> icp.fit(data, 3, sets = [{2}, {1,3}])
+    Traceback (most recent call last):
+      ...
+    ValueError: Set {1, 3} in sets is not valid: it must be a subset of {0,...,p-1} - {target}.
+
+    >>> icp.fit(data, 3, sets = ({2}, {0,1}))
+    Traceback (most recent call last):
+      ...
+    TypeError: sets must be a list of set, not <class 'tuple'>.
+
+    >>> icp.fit(data, 3, sets = [(2,), (0,1)])
+    Traceback (most recent call last):
+      ...
+    TypeError: sets must be a list of set, not of <class 'tuple'>.
+
+    if `precompute`, `verbose` or `color` are not of type `bool`,
+
+    >>> icp.fit(data, 3, precompute=1)
+    Traceback (most recent call last):
+      ...
+    TypeError: precompute must be bool, not <class 'int'>.
+
+    >>> icp.fit(data, 3, verbose=1)
+    Traceback (most recent call last):
+      ...
+    TypeError: verbose must be bool, not <class 'int'>.
+
+    >>> icp.fit(data, 3, color=1)
+    Traceback (most recent call last):
+      ...
+    TypeError: color must be bool, not <class 'int'>.
+
+    or if the samples from each experimental setting have different numbers of variables,
+
+    >>> data = [[[0.01, 0.02],[0.03,0.04]], [[0.01],[0.03]]]
+    >>> icp.fit(data, 3)
+    Traceback (most recent call last):
+      ...
+    ValueError: The samples from each setting have a different number of variables: [2 1].
+
+
     """
-    # Check inputs
-    #   input: alpha
+    # Check inputs: alpha
+    if not isinstance(alpha, float):
+        raise TypeError("alpha must be a float, not %s." % type(alpha))
     if alpha < 0 or alpha > 1:
         raise ValueError("alpha must be in [0,1].")
-    #   input: data
+
+    # Check inputs: data
     data = _Data(data, method='scatter' if precompute else 'raw')
-    #   input: target
+
+    # Check inputs: target
+    if not isinstance(target, int):
+        raise TypeError("target must be an int, not %s." % type(target))
     if target < 0 or target >= data.p or int(target) != target:
         raise ValueError("target must be an integer in [0, p-1].")
 
-    # Build set of candidate sets
+    # Check inputs: precompute
+    if not isinstance(precompute, bool):
+        raise TypeError("precompute must be bool, not %s." % type(precompute))
+
+    # Check inputs: verbose
+    if not isinstance(verbose, bool):
+        raise TypeError("verbose must be bool, not %s." % type(verbose))
+
+    # Check inputs: color
+    if not isinstance(color, bool):
+        raise TypeError("color must be bool, not %s." % type(color))
+
+    # Check inputs: sets
+    base = set(range(data.p))
+    base -= {target}
+    # If sets is provided, check its validity
     if sets is not None:
+        if not isinstance(sets, list):
+            raise TypeError("sets must be a list of set, not %s." % type(sets))
+        else:
+            for s in sets:
+                if not isinstance(s, set):
+                    raise TypeError("sets must be a list of set, not of %s." % type(s))
+                elif len(s - base) > 0:
+                    raise ValueError(
+                        "Set %s in sets is not valid: it must be a subset of {0,...,p-1} - {target}." % s)
         candidates = sets
+    # Build set of candidate sets
     else:
-        base = set(range(data.p))
-        base -= {target}
         # max_predictors = data.p - 1 if max_predictors is None else max_predictors
         max_predictors = data.p - 1
         candidates = []
         for set_size in range(max_predictors + 1):
             candidates += list(itertools.combinations(base, set_size))
 
+    # ----------------------------------------------------------------
     # Evaluate candidate sets
     accepted = []  # To store the accepted sets
     rejected = []  # To store the sets that were rejected
