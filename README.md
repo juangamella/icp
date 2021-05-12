@@ -16,6 +16,11 @@ The package is still at its infancy and its API is subject to change. However, t
 
 > e.g. *code written using causalicp==0.1.2 will run with causalicp==0.1.3, but may not run with causalicp==0.2.0.*
 
+The code has been written with an emphasis on readability and on
+keeping the dependency footprint to a minimum; to this end, the only
+dependencies outside the standard library are `numpy`, `scipy` and
+`termcolor`.
+
 ## Documentation
 
 You can find the complete documentation at https://sempler.readthedocs.io/en/latest/. For completeness, we include an overview and a simple example below:
@@ -95,7 +100,7 @@ The result of the algorithm is returned in a `causalicp.Result` object, with the
 
 We generate interventional data from a linear-gaussian SCM using
 [`sempler`](https://github.com/juangamella/sempler) (not a
-dependency of causalicp).
+dependency of `causalicp`).
 
 ```python
 import sempler, sempler.generators
@@ -148,11 +153,21 @@ result.conf_intervals
 #        [2.11059461, 0.7865869 , 3.87380337,        nan]])
 ```
 
+## Code structure
+
+The code is divided in two modules:
+
+- `icp.py`, which contains the implementation of the algorithm (`fit`
+  function) and the definition of the `Result` object.
+- `data.py`, which contains a class to manage the multi-environment
+  data and perform the linear regression for each set in an efficient
+  way.
+
 ## Tests
 
 Unit tests and doctests are included. Additionally, the output of the overall procedure has been checked against that of the `R` package by the original authors, [`InvariantCausalPrediction`](https://cran.r-project.org/web/packages/InvariantCausalPrediction/index.html) over tens of thousands of random graphs. Of course, this doesn't mean there are no bugs, but hopefully it means *they are less likely* :)
 
-The tests can be run with `make test`. This will also execute the doctests and run the `R` implementation on random inputs for comparison. You can add `SUITE=<module_name>` to run a particular module only. There are, however, additional dependencies to run the tests. You can find these in [`requirements_tests.txt`](https://github.com/juangamella/icp/blob/master/requirements_tests.txt) and [`R_requirements_tests.txt`](https://github.com/juangamella/icp/blob/master/R_requirements_tests.txt).
+The tests can be run with `make test`. This will also execute the doctests, generate `1000` random SCMs + interventions, and run the `R` implementation on them for comparison. You can add `SUITE=<module_name>` to run a particular module only. There are, however, additional dependencies to run the tests. You can find these in [`requirements_tests.txt`](https://github.com/juangamella/icp/blob/master/requirements_tests.txt) and [`R_requirements_tests.txt`](https://github.com/juangamella/icp/blob/master/R_requirements_tests.txt).
 
 ## Feedback
 
