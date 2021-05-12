@@ -35,7 +35,7 @@ CASES_DIR = causalicp/test/test_cases
 # Run tests
 tests: test
 
-test: cases
+test: cases doctests
 ifeq ($(SUITE),all)
 	python -m unittest discover $(PROJECT).test
 else
