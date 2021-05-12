@@ -88,6 +88,8 @@ Running ICP for the response variable `0`, at a significance level of `0.01` (th
 ```python
 import causalicp as icp
 result = icp.fit(data, 3, alpha=0.05, precompute=True, verbose=True, color=False)
+```
+```
 Tested sets and their p-values:
   set() rejected : 2.355990957880749e-10
   {0} rejected : 7.698846116207467e-16
