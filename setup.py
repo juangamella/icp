@@ -1,15 +1,16 @@
-from distutils.core import setup
+import setuptools
 
-setup(
-    name='python_template',
+setuptools.setup(
+    name='causalicp',
     version='0.0.1',
     author='Juan L Gamella',
     author_email='juangamella@gmail.com',
-    packages=['template', 'template.test'],
+    packages=['causalicp', 'causalicp.test'],
     scripts=[],
-    url='http://pypi.python.org/pypi/template/',
-    license='LICENSE.txt',
-    description='Python template module',
-    long_description=open('README.txt').read(),
-    install_requires=[]
+    url='https://github.com/juangamella/icp',
+    license='BSD 3-Clause License',
+    description='Python implementation of the Invariant Causal Prediction (ICP) algorithm for causal discovery.',
+    long_description=open('README.md').read(),
+    long_description_content_type="text/markdown",
+    install_requires=['numpy>=1.15.0', 'scipy>=1.0.0', 'termcolor>=1.1.0']
 )
