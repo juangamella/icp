@@ -10,8 +10,13 @@ You can clone this repo or install the python package via pip:
 pip install causalicp
 ```
 
+The package is still at its infancy and its API is subject to change. However, this will be done with care: non backward-compatible changes to the API are reflected by a change to the minor or major version number,
+
+> e.g. *code written using causalicp==0.1.2 will run with causalicp==0.1.3, but may not run with causalicp==0.2.0.*
+
 ## Documentation
 
+You can find the complete documentation at https://sempler.readthedocs.io/en/latest/. For completeness, we include an overview and a simple example below:
 
 ## Running the algorithm
 
