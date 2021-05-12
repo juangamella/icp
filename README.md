@@ -13,7 +13,7 @@ pip install causalicp
 ## Documentation
 
 
-## Running the algorithm
+### Running the algorithm
 
 To run the algorithm, the function `fit` is provided:
 
