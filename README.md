@@ -121,7 +121,7 @@ data += [scm.sample(n=130, shift_interventions = {1: (3.1, 5.4)})]
 data += [scm.sample(n=98, do_interventions = {2: (-1, 3)})]
 ```
 
-Running ICP for the response variable `0`, at a significance level of `0.01` (the default).
+Running ICP for the response variable `3`, at a significance level of `0.05`.
 
 ```python
 import causalicp as icp
