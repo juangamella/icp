@@ -1,6 +1,6 @@
 # Invariant Causal Prediction (ICP) Algorithm for Causal Discovery
 
-This is a Python implementation of the Invariant Causal Prediction (ICP) algorithm from the 2016 paper [*"Causal inference using invariant prediction: identification and confidence intervals"*](https://rss.onlinelibrary.wiley.com/doi/pdfdirect/10.1111/rssb.12167) by Jonas Peters, Peter Bühlmann and Nicolai Meinshausen.
+This is a Python implementation of the Invariant Causal Prediction (ICP) algorithm from the 2016 [paper](https://rss.onlinelibrary.wiley.com/doi/pdfdirect/10.1111/rssb.12167) *"Causal inference using invariant prediction: identification and confidence intervals"* by Jonas Peters, Peter Bühlmann and Nicolai Meinshausen.
 
 At the point of writing, and to the best of my knowledge, the only other publicly available implementation of the algorithm is in the [R package](https://cran.r-project.org/web/packages/InvariantCausalPrediction/index.html) written by the original authors.
 
@@ -30,7 +30,7 @@ You can find the complete documentation at https://icp.readthedocs.io/en/latest/
 To run the algorithm, the function `fit` is provided:
 
 ```python
-causalicp.fit(data, target, alpha=0.05, sets=None, precompute=True, verbose=False, color=False):
+causalicp.fit(data, target, alpha=0.05, sets=None, precompute=True, verbose=False, color=True):
 ```
 
 **Parameters**
@@ -193,3 +193,4 @@ and
 ## Feedback
 
 I hope you find this useful! Feedback and (constructive) criticism is always welcome, just shoot me an [email](mailto:juan.gamella@stat.math.ethz.ch) :)
+
