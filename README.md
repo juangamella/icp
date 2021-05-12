@@ -1,6 +1,6 @@
 # Invariant Causal Prediction (ICP) Algorithm for Causal Discovery
 
-This is a Python implementation of the Invariant Causal Prediction (ICP) algorithm from the 2016 paper [*"Causal inference using invariant prediction: identification and confidence intervals"*](https://rss.onlinelibrary.wiley.com/doi/pdfdirect/10.1111/rssb.12167) by Jonas Peters, Peter Bühlmann and Nicolai Meinshausen.
+This is a Python implementation of the Invariant Causal Prediction (ICP) algorithm from the 2016 [paper](https://rss.onlinelibrary.wiley.com/doi/pdfdirect/10.1111/rssb.12167) *"Causal inference using invariant prediction: identification and confidence intervals"* by Jonas Peters, Peter Bühlmann and Nicolai Meinshausen.
 
 At the point of writing, and to the best of my knowledge, the only other publicly available implementation of the algorithm is in the [R package](https://cran.r-project.org/web/packages/InvariantCausalPrediction/index.html) written by the original authors.
 
@@ -23,14 +23,14 @@ dependencies outside the standard library are `numpy`, `scipy` and
 
 ## Documentation
 
-You can find the complete documentation at https://sempler.readthedocs.io/en/latest/. For completeness, we include here an overview and an example.
+You can find the complete documentation at https://icp.readthedocs.io/en/latest/. For completeness, we include here an overview and an example.
 
 ### Running the algorithm: `causalicp.fit`
 
 To run the algorithm, the function `fit` is provided:
 
 ```python
-causalicp.fit(data, target, alpha=0.05, sets=None, precompute=True, verbose=False, color=False):
+causalicp.fit(data, target, alpha=0.05, sets=None, precompute=True, verbose=False, color=True):
 ```
 
 **Parameters**
@@ -174,11 +174,11 @@ The code is divided in two modules:
 ## Tests
 
 Unit tests and doctests are included. Additionally, the output of the
-overall procedure has been checked against that of the `R` package by
-the original authors,
-[`InvariantCausalPrediction`](https://cran.r-project.org/web/packages/InvariantCausalPrediction/index.html)
-over tens of thousands of random graphs. Of course, this doesn't mean
-there are no bugs, but hopefully it means *they are less likely* :)
+overall procedure has been checked over tens of thousands of random graphs against that of the [R
+package](https://cran.r-project.org/web/packages/InvariantCausalPrediction/index.html)
+by the original authors. Of
+course, this doesn't mean there are no bugs, but hopefully it means
+*they are less likely* :)
 
 The tests can be run with `make tests`. This will also execute the
 doctests, generate `1000` random SCMs + interventions, and run the `R`
