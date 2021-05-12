@@ -23,7 +23,7 @@ dependencies outside the standard library are `numpy`, `scipy` and
 
 ## Documentation
 
-You can find the complete documentation at https://sempler.readthedocs.io/en/latest/. For completeness, we include here an overview and an example.
+You can find the complete documentation at https://icp.readthedocs.io/en/latest/. For completeness, we include here an overview and an example.
 
 ### Running the algorithm: `causalicp.fit`
 
