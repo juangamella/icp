@@ -153,7 +153,7 @@ class _Data():
             raise TypeError(
                 "data should be a numpy.ndarray or list of array-like, not %s." % type(data))
         for X in data:
-            array = np.array(X, dtype=np.float)
+            array = np.array(X, dtype=float)
             dims = array.ndim
             if dims != 2:
                 raise ValueError(
