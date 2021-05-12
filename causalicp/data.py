@@ -78,8 +78,10 @@ class _Data():
         ------
         ValueError:
             If `method` is not one of `'scatter'` or `'raw'`, or if
-            the samples from each setting have different number of
-            variables.
+            the samples from each setting are not 2-dimensional, have
+            different number of variables, or contain elements which
+            cannot be casted into floats.
+
 
         Example
         -------
@@ -92,12 +94,6 @@ class _Data():
         >>> data = _Data(samples, method='raw')
         >>> data = _Data(samples, method='scatter')
 
-        Passing a numpy array:
-
-        >>> import numpy as np
-        >>> samples = np.random.multivariate_normal([0,0,0], np.eye(3), size=(10,3))
-        >>> data = _Data(samples)
-
         Passing the wrong method:
 
         >>> _Data(samples, method='sctter')
@@ -105,25 +101,58 @@ class _Data():
           ...
         ValueError: method="sctter" not recognized.
 
-        Passing samples with different number of variables:
+        Passing a numpy array instead of a list:
+
+        >>> import numpy as np
+        >>> samples = np.random.multivariate_normal([0,0,0], np.eye(3), size=(10,3))
+        >>> data = _Data(samples)
+        Traceback (most recent call last):
+          ...
+        TypeError: data should be a list of array-like, not <class 'numpy.ndarray'>.
+
+        Passing samples with different number of variables,
 
         >>> samples = [[[0.01, 0.02],[0.03,0.04]], [[0.01],[0.03]]]
         >>> _Data(samples)
         Traceback (most recent call last):
           ...
         ValueError: The samples from each setting have a different number of variables: [2 1].
+
+        the wrong dimension,
+
+        >>> samples = [[0.01, 0.02], [[0.01],[0.03]]]
+        >>> _Data(samples)
+        Traceback (most recent call last):
+          ...
+        ValueError: data should contain 2-dimensional array-likes, not 1-dimensional.
+
+        or with non-numeric elements,
+
+        >>> samples = [[[0.01, 'a'],[0.03,0.04]], [[0.01],[0.03]]]
+        >>> _Data(samples)
+        Traceback (most recent call last):
+          ...
+        ValueError: could not convert string to float: 'a'
+
+
         """
-        # Check inputs
+        # Check inputs: method
         if method not in ['scatter', 'raw']:
             raise ValueError('method="%s" not recognized.' % method)
         else:
             self._method = method
+
+        # Check inputs: data
         self._data = []
-        # Copy data and check that all samples have the same number
-        # of variables
         Ps = []
+        if not isinstance(data, list):
+            raise TypeError("data should be a list of array-like, not %s." % type(data))
         for X in data:
-            array = np.array(X)
+            array = np.array(X, dtype=np.float)
+            dims = array.ndim
+            if dims != 2:
+                raise ValueError(
+                    "data should contain 2-dimensional array-likes, not %d-dimensional." % dims)
             Ps.append(array.shape[1])
             self._data.append(array.copy())
         Ps = np.array(Ps)
@@ -131,13 +160,16 @@ class _Data():
             raise ValueError(
                 'The samples from each setting have a different number of variables: %s.' % Ps)
 
+        # Initialize the instance
         self.p = Ps[0]
         self.e = len(self._data)
         self.n_obs = np.array([len(X) for X in data])
         self.N = self.n_obs.sum()
+
         # Compute the pooled correlation matrix (with columns of 1s for intercept)
         self._pooled_data = np.hstack([np.vstack(self._data), np.ones((self.N, 1))])
         self.pooled_correlation = self._pooled_data.T @ self._pooled_data
+
         # If using the scatter (covariance) matrix for regression,
         # compute the pooled mean and variance
         if method == 'scatter':
