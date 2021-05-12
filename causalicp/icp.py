@@ -555,4 +555,5 @@ if __name__ == '__main__':
                                 [1.97983673, -0.35611173, 1.28921189, -1.42832605],
                                 [-0.61288207, 1.91706645, 0.18163322, -1.51303223],
                                 [0.31303047, -0.53037518, 0.5094926, -2.87618241]])]
-    doctest.testmod(extraglobs={'data': data, 'data_bad_model': data_bad_model}, verbose=True)
+    doctest.testmod(extraglobs={'data2': data, 'data': data,
+                                'data_bad_model': data_bad_model}, verbose=True)
