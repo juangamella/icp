@@ -29,15 +29,14 @@
 # POSSIBILITY OF SUCH DAMAGE.
 
 # ---------------------------------------------------------------------
-# Unit tests for module icp.py
+# Unit tests
 
 import unittest
 import numpy as np
 import copy
 
 # Tested functions
-from causalicp.gaussian_data import _GaussianData
-from causalicp.icp import Result
+from causalicp.data import _Data
 
 
 class DataTests(unittest.TestCase):
@@ -57,7 +56,7 @@ class DataTests(unittest.TestCase):
         self.XX = XX
 
     def test_basic(self):
-        data = _GaussianData(self.XX)
+        data = _Data(self.XX)
         self.assertEqual(data.N, self.N)
         self.assertTrue((data.n_obs == self.n_obs).all())
         self.assertEqual(data.p, self.p)
@@ -67,7 +66,7 @@ class DataTests(unittest.TestCase):
     def test_memory(self):
         # Test that the data is copied into the class
         XX = copy.deepcopy(self.XX)
-        data = _GaussianData(XX)
+        data = _Data(XX)
         XX[0][0, 0] = -100
         data_pooled = data._pooled_data
         self.assertFalse(data_pooled[0, 0] == XX[0][0, 0])
