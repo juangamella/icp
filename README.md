@@ -1,6 +1,6 @@
 # Invariant Causal Prediction (ICP) Algorithm for Causal Discovery
 
-This is a Python implementation of the Invariant Causal Prediction (ICP) algorithm from the 2016 paper [*"Causal inference using invariant prediction: identification and confidence intervals"*](https://rss.onlinelibrary.wiley.com/doi/pdfdirect/10.1111/rssb.12167) by Jonas Peters, Peter Bühlmann and Nicolai Meinshausen.
+This is a Python implementation of the Invariant Causal Prediction (ICP) algorithm from the 2016 paper [*"Causal inference using invariant prediction: identification and confidence intervals"*](https://rss.onlinelibrary.wiley.com/doi/pdfdirect/10.1111/rssb.12167) by Jonas Peters, Peter Bühlmann and Nicolai Meinshausen. At the point of writing, and to the best of my knowledge, the only other publicly available implementation of the algorithm is in the `R` package [`InvariantCausalPrediction`](https://cran.r-project.org/web/packages/InvariantCausalPrediction/index.html).
 
 ## Installation
 
@@ -148,20 +148,9 @@ result.conf_intervals
 
 ## Tests
 
-Unit tests and doctests are included. Additionally, the output of the overall procedure has been checked against that of the R package by the original authors [`InvariantCausalPrediction`](https://www.rdocumentation.org/packages/pcalg/versions/2.7-1) over tens of thousands of random graphs. Of course, this doesn't mean there are no bugs, but hopefully it means *they are less likely* :)
+Unit tests and doctests are included. Additionally, the output of the overall procedure has been checked against that of the `R` package by the original authors, [`InvariantCausalPrediction`](https://cran.r-project.org/web/packages/InvariantCausalPrediction/index.html) over tens of thousands of random graphs. Of course, this doesn't mean there are no bugs, but hopefully it means *they are less likely* :)
 
-The tests can be run with `make test`. You can add `SUITE=<module_name>` to run a particular module only. There are, however, additional dependencies to run the tests. You can find these in [`requirements_tests.txt`](https://github.com/juangamella/ges/blob/master/requirements_tests.txt) and [`R_requirements_tests.txt`](https://github.com/juangamella/ges/blob/master/R_requirements_tests.txt).
-
-**Test modules**
-
-They are in the sub package `ges.test`, in the directory `ges/test/`:
-
-   - `test_decomposable_score.py`: tests for the decomposable score base class.
-   - `test_gauss_bic.py`: tests for the Gaussian bic score.
-   - `test_operators.py`: tests for the insert, delete and turn operators.
-   - `test_pdag_to_cpdag.py`: tests the conversion from PDAG to CPDAG, which is applied after each application of an operator.
-   - `test_utils.py`: tests the other auxiliary functions.
-   - `ges.test.test_vs_pcalg`: compares the output of the algorithm vs. that of `pcalg` for randomly generated graphs.
+The tests can be run with `make test`. This will also execute the doctests and run the `R` implementation on random inputs for comparison. You can add `SUITE=<module_name>` to run a particular module only. There are, however, additional dependencies to run the tests. You can find these in [`requirements_tests.txt`](https://github.com/juangamella/icp/blob/master/requirements_tests.txt) and [`R_requirements_tests.txt`](https://github.com/juangamella/icp/blob/master/R_requirements_tests.txt).
 
 ## Feedback
 
