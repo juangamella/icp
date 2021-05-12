@@ -398,12 +398,11 @@ def _confidence_intervals(y, coefs, S, residuals, alpha, data):
 
 
 class Result():
-    """The result of running Invariant Causal Prediction, i.e. estimate,
-    accepted sets, p-values, etc.
+    """The result of running Invariant Causal Prediction, produced as
+    output of :meth:`causalicp.fit`.
 
     Attributes
     ----------
-
     p : int
         The total number of variables in the data (including the response/target).
     target : int

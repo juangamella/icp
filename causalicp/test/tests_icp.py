@@ -1,4 +1,4 @@
-# Copyright 2019 Juan L Gamella
+# Copyright 2021 Juan L. Gamella
 
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions
