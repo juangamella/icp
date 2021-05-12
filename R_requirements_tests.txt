@@ -1,0 +1,3 @@
+# R dependencies for the tests:
+# The InvariantCausalPrediction package with the original implementation by the authors.
+install.packages(c("InvariantCausalPrediction"))

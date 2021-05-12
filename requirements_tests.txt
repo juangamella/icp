@@ -1,0 +1,7 @@
+numpy
+termcolor
+scipy
+
+# Additional requirements for the tests
+sempler
+pandas
