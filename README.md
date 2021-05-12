@@ -23,57 +23,48 @@ causalicp.fit(data, target, alpha=0.05, sets=None, precompute=True, verbose=Fals
 
 **Parameters**
 
-data : numpy.ndarray or list of array-like
-    The data from all experimental settings. Each element of the
-    list/array is a 2-dimensional array with a sample from a
-    different setting, where columns correspond to variables and
-    rows to observations (data-points). The data also contains the
-    response variable, which is specified with the `target`
-    parameter.
-target : int
-    The index of the response or target variable of interest.
-alpha : float, default=0.05
-    The level of the test procedure, taken from `[0,1]`. Defaults
-    to `0.05`.
-sets : list of set or None, default=None
-    The sets for which ICP will test invariance. An error is
-    raised if a set is not a subset of `{0,...,p-1}` or it
-    contains the target, where `p` is the total number of
-    variables (including the target). If `None` all possible
-    subsets of predictors will be considered.
-precompute : bool, default=True
-    Wether to precompute the sample covariance matrix to speed up
-    linear regression during the testing of each predictor
-    set. For large sample sizes this drastically reduces the
-    overall execution time, but it may result in numerical
-    instabilities for highly correlated data. If set to `False`,
-    for each set of predictors the regression is done using an
-    iterative least-squares solver on the raw data.
-verbose: bool, default=False
-    If ICP should run in verbose mode, i.e. displaying information
-    about completion and the result of tests.
-color : bool, default=True
-    If the output produced when `verbose=True` should be color
-    encoded (not recommended if your terminal does not support
-    ANSII color formatting), see
-    [termcolor](https://pypi.org/project/termcolor/).
+- **data** (numpy.ndarray or list of array-like): The data from all
+  experimental settings. Each element of the list/array is a
+  2-dimensional array with a sample from a different setting, where
+  columns correspond to variables and rows to observations
+  (data-points). The data also contains the response variable, which
+  is specified with the `target` parameter.
+- **target** (int) The index of the response or target variable of
+  interest.
+- **alpha** (float, default=0.05 The level of the test procedure,
+  taken from `[0,1]`. Defaults to `0.05`.
+- **sets** (list of set or None, default=None): The sets for which ICP
+  will test invariance. An error is raised if a set is not a subset of
+  `{0,...,p-1}` or it contains the target, where `p` is the total
+  number of variables (including the target). If `None` all possible
+  subsets of predictors will be considered.
+- **precompute** (bool, default=True): Wether to precompute the sample
+  covariance matrix to speed up linear regression during the testing
+  of each predictor set. For large sample sizes this drastically
+  reduces the overall execution time, but it may result in numerical
+  instabilities for highly correlated data. If set to `False`, for
+  each set of predictors the regression is done using an iterative
+  least-squares solver on the raw data.
+- **verbose** (bool, default=False): If ICP should run in verbose
+  mode, i.e. displaying information about completion and the result of
+  tests.
+- **color** (bool, default=True): If the output produced when
+  `verbose=True` should be color encoded (not recommended if your
+  terminal does not support ANSII color formatting), see
+  [termcolor](https://pypi.org/project/termcolor/).
 
 **Raises**
 
-ValueError :
-    If the value of some of the parameters is not appropriate,
-    e.g. `alpha` is negative, `data` contains samples with
-    different number of variables, or `sets` contains invalid
-    sets.
-TypeError :
-    If the type of some of the parameters was not expected (see
-    examples below).
+- **ValueError**: If the value of some of the parameters is not
+  appropriate, e.g. `alpha` is negative, `data` contains samples with
+  different number of variables, or `sets` contains invalid sets.
+- **TypeError** : If the type of some of the parameters was not expected (see examples below).
 
 **Returns**
 
-result : icp.Result
-    An object containing the result of running ICP, i.e. estimate,
-    accepted sets, p-values, etc.
+The result of the algorithm is returned in a `causalicp.Result` object, containing the result the estimate, accepted sets, p-values, etc.
+
+Its attributes are:
 
 **Example**
 
@@ -81,19 +72,22 @@ We generate interventional data from a linear-gaussian SCM using
 [`sempler`](https://github.com/juangamella/sempler) (not a
 dependency of causalicp).
 
->>> import sempler, sempler.generators
->>> import numpy as np
->>> np.random.seed(12)
->>> W = sempler.generators.dag_avg_deg(4, 2.5, 0.5, 2)
->>> scm = sempler.LGANM(W, (-1,1), (1,2))
->>> data = [scm.sample(n=100)]
->>> data += [scm.sample(n=130, shift_interventions = {1: (3.1, 5.4)})]
->>> data += [scm.sample(n=98, do_interventions = {2: (-1, 3)})]
+```python
+import sempler, sempler.generators
+import numpy as np
+np.random.seed(12)
+W = sempler.generators.dag_avg_deg(4, 2.5, 0.5, 2)
+scm = sempler.LGANM(W, (-1,1), (1,2))
+data = [scm.sample(n=100)]
+data += [scm.sample(n=130, shift_interventions = {1: (3.1, 5.4)})]
+data += [scm.sample(n=98, do_interventions = {2: (-1, 3)})]
+```
 
 Running ICP for the response variable `0`, at a significance level of `0.01` (the default).
 
->>> import causalicp as icp
->>> result = icp.fit(data, 3, alpha=0.05, precompute=True, verbose=True, color=False)
+```python
+import causalicp as icp
+result = icp.fit(data, 3, alpha=0.05, precompute=True, verbose=True, color=False)
 Tested sets and their p-values:
   set() rejected : 2.355990957880749e-10
   {0} rejected : 7.698846116207467e-16
@@ -104,25 +98,25 @@ Tested sets and their p-values:
   {1, 2} accepted : 0.8433000000649277
   {0, 1, 2} accepted : 1
 Estimated parental set: {1}
+```
 
-Obtaining the estimate, accepted sets, etc
+The estimate, accepted sets, etc are attributes of the `causalicp.Result` object:
+
 
 >>> result.estimate
 {1}
 
->>> result.accepted_sets
 [{0, 1}, {1, 2}, {0, 1, 2}]
 
->>> result.rejected_sets
 [set(), {0}, {1}, {2}, {0, 2}]
 
->>> result.pvalues
+result.pvalues
 {0: 0.8433000000649277, 1: 8.374476052441259e-08, 2: 0.7330408066181638, 3: nan}
 
->>> result.conf_intervals
+result.conf_intervals
 array([[0.        , 0.57167295, 0.        ,        nan],
        [2.11059461, 0.7865869 , 3.87380337,        nan]])
-
+```
 **Returns**
 
 **Example**
