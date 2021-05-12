@@ -23,7 +23,7 @@ dependencies outside the standard library are `numpy`, `scipy` and
 
 ## Documentation
 
-You can find the complete documentation at https://sempler.readthedocs.io/en/latest/. For completeness, we include an overview and a simple example below:
+You can find the complete documentation at https://sempler.readthedocs.io/en/latest/. For completeness, we include here an overview and an example.
 
 ### Running the algorithm: `causalicp.fit`
 
@@ -33,63 +33,63 @@ To run the algorithm, the function `fit` is provided:
 causalicp.fit(data, target, alpha=0.05, sets=None, precompute=True, verbose=False, color=False):
 ```
 
-***Parameters***
+**Parameters**
 
-- **data** (numpy.ndarray or list of array-like): The data from all
+- ***data*** (numpy.ndarray or list of array-like): The data from all
   experimental settings. Each element of the list/array is a
   2-dimensional array with a sample from a different setting, where
   columns correspond to variables and rows to observations
   (data-points). The data also contains the response variable, which
   is specified with the `target` parameter.
-- **target** (int) The index of the response or target variable of
+- ***target*** (int) The index of the response or target variable of
   interest.
-- **alpha** (float, default=0.05 The level of the test procedure,
+- ***alpha*** (float, default=0.05 The level of the test procedure,
   taken from `[0,1]`. Defaults to `0.05`.
-- **sets** (list of set or None, default=None): The sets for which ICP
+- ***sets*** (list of set or None, default=None): The sets for which ICP
   will test invariance. An error is raised if a set is not a subset of
   `{0,...,p-1}` or it contains the target, where `p` is the total
   number of variables (including the target). If `None` all possible
   subsets of predictors will be considered.
-- **precompute** (bool, default=True): Wether to precompute the sample
+- ***precompute*** (bool, default=True): Wether to precompute the sample
   covariance matrix to speed up linear regression during the testing
   of each predictor set. For large sample sizes this drastically
   reduces the overall execution time, but it may result in numerical
   instabilities for highly correlated data. If set to `False`, for
   each set of predictors the regression is done using an iterative
   least-squares solver on the raw data.
-- **verbose** (bool, default=False): If ICP should run in verbose
+- ***verbose*** (bool, default=False): If ICP should run in verbose
   mode, i.e. displaying information about completion and the result of
   tests.
-- **color** (bool, default=True): If the output produced when
+- ***color*** (bool, default=True): If the output produced when
   `verbose=True` should be color encoded (not recommended if your
   terminal does not support ANSII color formatting), see
   [termcolor](https://pypi.org/project/termcolor/).
 
-***Raises***
+**Raises**
 
-- **ValueError**: If the value of some of the parameters is not
+- ***ValueError***: If the value of some of the parameters is not
   appropriate, e.g. `alpha` is negative, `data` contains samples with
   different number of variables, or `sets` contains invalid sets.
-- **TypeError** : If the type of some of the parameters was not expected (see examples below).
+- ***TypeError*** : If the type of some of the parameters was not expected (see examples below).
 
-***Returns***
+**Returns**
 
 The result of the algorithm is returned in a `causalicp.Result` object, with the following attributes:
 
-- **p** (int): The total number of variables in the data (including
+- ***p*** (int): The total number of variables in the data (including
     the response/target).
-- **target** (int): The index of the
+- ***target*** (int): The index of the
     response/target.
-- **estimate** (set or None): The estimated parental set returned by
+- ***estimate*** (set or None): The estimated parental set returned by
     ICP, or `None` if all sets of predictors were rejected.
-- **accepted_sets** (list of set): A list containing the accepted sets
+- ***accepted_sets*** (list of set): A list containing the accepted sets
   of predictors.
-- **rejected_sets** (list of set): 
+- ***rejected_sets*** (list of set): 
     A list containing the rejected sets of predictors.
-- **pvalues** (dict of (int, float)): A dictionary containing the
+- ***pvalues*** (dict of (int, float)): A dictionary containing the
     p-value for the causal effect of each individual predictor. The
     target/response is included in the dictionary and has value `nan`.
-- **conf_intervals** (numpy.ndarray or None): A `2 x p` array of
+- ***conf_intervals*** (numpy.ndarray or None): A `2 x p` array of
     floats representing the confidence interval for the causal effect
     of each variable. Each column corresponds to a variable, and the
     first and second row correspond to the lower and upper limit of
@@ -157,17 +157,30 @@ result.conf_intervals
 
 The code is divided in two modules:
 
-- `icp.py`, which contains the implementation of the algorithm (`fit`
+- `icp.py` which contains the implementation of the algorithm (`fit`
   function) and the definition of the `Result` object.
-- `data.py`, which contains a class to manage the multi-environment
+- `data.py` which contains a class to manage the multi-environment
   data and perform the linear regression for each set in an efficient
   way.
 
 ## Tests
 
-Unit tests and doctests are included. Additionally, the output of the overall procedure has been checked against that of the `R` package by the original authors, [`InvariantCausalPrediction`](https://cran.r-project.org/web/packages/InvariantCausalPrediction/index.html) over tens of thousands of random graphs. Of course, this doesn't mean there are no bugs, but hopefully it means *they are less likely* :)
+Unit tests and doctests are included. Additionally, the output of the
+overall procedure has been checked against that of the `R` package by
+the original authors,
+[`InvariantCausalPrediction`](https://cran.r-project.org/web/packages/InvariantCausalPrediction/index.html)
+over tens of thousands of random graphs. Of course, this doesn't mean
+there are no bugs, but hopefully it means *they are less likely* :)
 
-The tests can be run with `make test`. This will also execute the doctests, generate `1000` random SCMs + interventions, and run the `R` implementation on them for comparison. You can add `SUITE=<module_name>` to run a particular module only. There are, however, additional dependencies to run the tests. You can find these in [`requirements_tests.txt`](https://github.com/juangamella/icp/blob/master/requirements_tests.txt) and [`R_requirements_tests.txt`](https://github.com/juangamella/icp/blob/master/R_requirements_tests.txt).
+The tests can be run with `make test`. This will also execute the
+doctests, generate `1000` random SCMs + interventions, and run the `R`
+implementation on them for comparison. You can add
+`SUITE=<module_name>` to run a particular module only. There are,
+however, additional dependencies to run the tests. You can find these
+in
+[`requirements_tests.txt`](https://github.com/juangamella/icp/blob/master/requirements_tests.txt)
+and
+[`R_requirements_tests.txt`](https://github.com/juangamella/icp/blob/master/R_requirements_tests.txt).
 
 ## Feedback
 
