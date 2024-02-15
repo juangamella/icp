@@ -1,8 +1,12 @@
 # Invariant Causal Prediction (ICP) Algorithm for Causal Discovery
 
+[![PyPI version](https://badge.fury.io/py/causalicp.svg)](https://badge.fury.io/py/causalicp)
+[![Downloads](https://static.pepy.tech/badge/causalicp)](https://pepy.tech/project/causalicp)
+[![License](https://img.shields.io/badge/License-BSD_3--Clause-blue.svg)](https://opensource.org/licenses/BSD-3-Clause)
+
 This is a Python implementation of the Invariant Causal Prediction (ICP) algorithm from the 2016 [paper](https://rss.onlinelibrary.wiley.com/doi/pdfdirect/10.1111/rssb.12167) *"Causal inference using invariant prediction: identification and confidence intervals"* by Jonas Peters, Peter Bühlmann and Nicolai Meinshausen.
 
-At the point of writing, and to the best of my knowledge, the only other publicly available implementation of the algorithm is in the [R package](https://cran.r-project.org/web/packages/InvariantCausalPrediction/index.html) written by the original authors.
+Currently, only the faster Method II of the paper (t-test + F-test on residuals) is implemented. For more details, see Section 3.1.2 of the paper.
 
 ## Installation
 
